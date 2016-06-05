@@ -41,12 +41,6 @@ public class QuadTree : MonoBehaviour {
 	}
 
 
-	private QuadTree()
-	{
-		Debug.Log("CONSTRUCTING!!!!!!!!!!!!!!!!!!!!!!!!!");
-
-	}
-
 
 	public void SetCenter(Vector3 parentCenter)
 	{ 
@@ -103,17 +97,21 @@ public class QuadTree : MonoBehaviour {
 
 		if (quadrant == 0 || quadrant == 3)
 		{
-			quadCenter.x -= (Width/2);
-			quadCenter.y = (quadrant == 3) ? (quadCenter.y - (Height / 2)) : quadCenter.y + (Height / 2);
+			quadCenter.x -= (Width/4);
+			quadCenter.y = (quadrant == 3) ? (quadCenter.y - (Height / 4)) : quadCenter.y + (Height / 4);
 		}
 		else 
 		{
-			quadCenter.y -= (Height / 2);
-			quadCenter.x = (quadrant == 3) ? (quadCenter.x - (Width / 2)) : quadCenter.x + (Width / 2);
+			quadCenter.y -= (Height / 4);
+			quadCenter.x = (quadrant == 3) ? (quadCenter.x - (Width / 4)) : quadCenter.x + (Width / 4);
 		}
 		Debug.Log("This.center:" + (this.Center) + "quadCenter:" + (quadCenter));
-		GameObject testPrefab = (GameObject)Resources.Load("/Prefabs/Seperator");
+		GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
+		testPrefab = testPrefab.gameObject;
+		Vector3 prefabScale = testPrefab.transform.localScale;
+		testPrefab.transform.localScale /= (2 * 1);
 		Instantiate(testPrefab, quadCenter, Quaternion.identity);
+		testPrefab.transform.localScale = prefabScale;
 		return	quadCenter;
 	}
 
