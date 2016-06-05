@@ -38,7 +38,7 @@ public class Main : MonoBehaviour
 		Particles = new List<GameObject>();
 		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
-		_QuadTree = new QuadTree(ParentPrefab.transform.position, scaleOfParentQuad.y, scaleOfParentQuad.x, null);
+		_QuadTree = new QuadTree(ParentPrefab.transform.position, scaleOfParentQuad.y, scaleOfParentQuad.x);
 	}
 
 	// Update is called once per frame
@@ -106,7 +106,7 @@ public class Main : MonoBehaviour
 					//instantiate and add in the list
 					GameObject ParticleObject;
 					Particles.Add(ParticleObject = Instantiate(ParticlePrefab, new Vector3(hit.point.x, hit.point.y, hit.point.z), Quaternion.identity) as GameObject);
-					Debug.Log("Particles.len:" + hit.point);
+					//Debug.Log("Particles.pos:" + hit.point);
 					//insert in the QuadTree
 					_QuadTree.Insert(ParticleObject);
 				}

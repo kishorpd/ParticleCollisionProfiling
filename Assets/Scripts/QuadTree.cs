@@ -17,49 +17,69 @@ public class QuadTree {//: MonoBehaviour {
 	private QuadTree[]			_ChildNodes;
 	private Rect a;
 
-	public QuadTree(Vector3 parentCenter, float parentHeight, float parentWidth, QuadTree parent)
+	public QuadTree(Vector3 parentCenter, float parentHeight, float parentWidth)
 	{
-		if (parent != null)
-		{
-			_CurrentDepth = parent._CurrentDepth + 1;
-		}
-		else
-		{
-			_CurrentDepth = 0;
-		}
+		_CurrentDepth = 0;
 
 		Height = parentHeight;
 		Width = parentWidth;
 		Center = parentCenter;
+		_ParentNode = null;
+		_Particles = new List<GameObject>();
+	}
+
+
+	private QuadTree(QuadTree parent)
+	{
+		_CurrentDepth = parent._CurrentDepth + 1;
+		Debug.Log("Depth:" + _CurrentDepth);
+
+		Height = parent.Height / 2;
+		Width = parent.Width / 2;
 		_ParentNode = parent;
 		_Particles = new List<GameObject>();
 	}
 
 
+	private QuadTree()
+	{
+		Debug.Log("CONSTRUCTING!!!!!!!!!!!!!!!!!!!!!!!!!");
+
+	}
+
+
+	public void SetCenter(Vector3 parentCenter)
+	{ 
+		Center = parentCenter;
+	}
+		
 	public void Insert(GameObject particleObject)
 	{
 		if (_TotalLeafNodes > 3)//insert first element ofchild;
 		{
-			if (_Particles.Count == 0) //distribute the list
-			{
-				//insert in the specific QuadTree corresponding to the Quadrant
-				Debug.Log("This must be the fifth element everyone is talking about i guess!");
-				Insert(particleObject, InQuadrant(particleObject));
-			}
-			else 
+			//insert in the specific QuadTree corresponding to the Quadrant
+			//Insert(particleObject);
+			if (_Particles.Count != 0) //distribute the list
 			{
 				int Quadrant;
 				//clear list of gameObjects and insert in the quadtrees[0],[1],[2],[3];
+				_ChildNodes = new QuadTree[4];// (this);
+				for (Quadrant = 0; Quadrant < 4;++Quadrant )
+				{
+					_ChildNodes[Quadrant] = new QuadTree(this);
+				}
+
 				for (int leaf = 0; leaf < 4; ++leaf)
 				{
 					Quadrant = InQuadrant(_Particles[leaf]);
-					_ChildNodes[Quadrant] = new QuadTree(GetCenterOfQuadrant(leaf),  Height/2, Width/2, this);
-					_ChildNodes[Quadrant].Insert(_Particles[leaf], InQuadrant(_Particles[leaf]));
+					Debug.Log("Leaf:" + (leaf) + "Quadrant:" + (Quadrant));
+					_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(leaf));
+					_ChildNodes[Quadrant].Insert(_Particles[leaf]);
 				}
-				Quadrant = InQuadrant(particleObject);
-				_ChildNodes[Quadrant].Insert(particleObject, Quadrant);
 				_Particles.Clear();
 			}
+				Debug.Log("This must be the fifth element everyone is talking about i guess!");
+				_ChildNodes[InQuadrant(particleObject)].Insert(particleObject);
 		}
 		else 
 		{
@@ -72,15 +92,14 @@ public class QuadTree {//: MonoBehaviour {
 	{
 		if (_TotalLeafNodes == 0)
 		{
-
 			//ChildNodes[Quadrant] = new QuadTree(.......);
 			//_ChildNodes[Quadrant] = new QuadTree(GetCenterOfQuadrant(quadrant), Height/2, Width/2, particleObject, parent);
 		}
 	}
 
-	Vector2 GetCenterOfQuadrant(int quadrant)
+	Vector3 GetCenterOfQuadrant(int quadrant)
 	{
-		Vector2 quadCenter = new Vector2();
+		Vector3 quadCenter = this.Center;
 
 		if (quadrant == 0 || quadrant == 3)
 		{
@@ -92,6 +111,7 @@ public class QuadTree {//: MonoBehaviour {
 			quadCenter.y -= (Height / 2);
 			quadCenter.x = (quadrant == 3) ? (quadCenter.x - (Width / 2)) : quadCenter.x + (Width / 2);
 		}
+		Debug.Log("This.center:" + (this.Center) + "quadCenter:" + (quadCenter));
 
 		return	quadCenter;
 	}
