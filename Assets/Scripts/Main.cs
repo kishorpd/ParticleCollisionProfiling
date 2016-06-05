@@ -14,6 +14,7 @@ public class Main : MonoBehaviour
 	Vector3 EndPoint = new Vector3(-31, -22, 0);
 
 	private QuadTree _QuadTree;
+	public QuadTree AQuadTree;
 
 	public GameObject ParentPrefab;
 	public GameObject ParticlePrefab;
@@ -38,7 +39,10 @@ public class Main : MonoBehaviour
 		Particles = new List<GameObject>();
 		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
-		_QuadTree = new QuadTree(ParentPrefab.transform.position, scaleOfParentQuad.y, scaleOfParentQuad.x);
+		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
+
+		GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
+		Instantiate(testPrefab, ParentPrefab.transform.position, Quaternion.identity);
 	}
 
 	// Update is called once per frame

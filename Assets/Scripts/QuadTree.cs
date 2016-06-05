@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class QuadTree {//: MonoBehaviour {
+public class QuadTree : MonoBehaviour {
 
 	public float Height { get; set; }
 	public float Width { get; set; }
@@ -112,7 +112,8 @@ public class QuadTree {//: MonoBehaviour {
 			quadCenter.x = (quadrant == 3) ? (quadCenter.x - (Width / 2)) : quadCenter.x + (Width / 2);
 		}
 		Debug.Log("This.center:" + (this.Center) + "quadCenter:" + (quadCenter));
-
+		GameObject testPrefab = (GameObject)Resources.Load("/Prefabs/Seperator");
+		Instantiate(testPrefab, quadCenter, Quaternion.identity);
 		return	quadCenter;
 	}
 
