@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
-
+using System.Collections.Generic;
 
 public class Main : MonoBehaviour {
 
@@ -12,8 +12,10 @@ public class Main : MonoBehaviour {
 	Vector3 StartPoint = new Vector3(-31, 22,0);
 	Vector3 EndPoint =	new Vector3(-31,-22,0);
 
+
+
 	public GameObject ParticlePrefab;
-	 //List<GameObject> Particles = new List<GameObject>();
+	List<GameObject> Particles;
 
 	public Material lineColor;
 
@@ -30,11 +32,14 @@ public class Main : MonoBehaviour {
 		lineRenderer.material = lineColor;// new Material(Shader.Find("Particles/Additive"));
 		//lineRenderer.SetColors(c1, c2);
 		lineRenderer.SetVertexCount(lengthOfLineRenderer);
+		Particles = new List<GameObject>();
+
+	//	QuadTree Qt = new QuadTree(StartPoint);
 	}
 	
 	// Update is called once per frame
 	void Update () {
-		DrawSquare();
+	//	DrawSquare();
 		SpawnParticleOnClick();
 	}
 
@@ -94,13 +99,13 @@ public class Main : MonoBehaviour {
 			{
 				if (Input.GetMouseButtonUp(0))
 				{ 
-				//GameObject obj =
-					Instantiate(ParticlePrefab, new Vector3(hit.point.x, hit.point.y, hit.point.z), Quaternion.identity);// as GameObject;
+					Particles.Add(Instantiate(ParticlePrefab, new Vector3(hit.point.x, hit.point.y, hit.point.z), Quaternion.identity) as GameObject);
+					Debug.Log("Particles.len:" + Particles.Count);
 				}
 				if (Input.GetMouseButtonUp(1))
 				{
-					//TODO: fix right click at time
-					Debug.Log("Obj:" + hit.Equals(ParticlePrefab.gameObject));
+					//TODO: fix right click at appropriate time
+					Debug.Log("Obj:" + (hit.transform.gameObject.name));
 				}
 			}
 		}
