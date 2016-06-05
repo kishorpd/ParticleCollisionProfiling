@@ -2,18 +2,20 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class Main : MonoBehaviour {
+public class Main : MonoBehaviour
+{
 
 	public float lineWidth = 1.5f;
 	public float BorderOffsetX = 15f;
 	public float BorderOffsetY = 15f;
 	public float BorderWidth = 120f;
 	public float BorderHeight = 95f;
-	Vector3 StartPoint = new Vector3(-31, 22,0);
-	Vector3 EndPoint =	new Vector3(-31,-22,0);
+	Vector3 StartPoint = new Vector3(-31, 22, 0);
+	Vector3 EndPoint = new Vector3(-31, -22, 0);
 
+	private QuadTree _QuadTree;
 
-
+	public GameObject ParentPrefab;
 	public GameObject ParticlePrefab;
 	List<GameObject> Particles;
 
@@ -27,85 +29,92 @@ public class Main : MonoBehaviour {
 	RaycastHit hit; // initializing the raycasthit
 
 	// Use this for initialization
-	void Start () {
+	void Start()
+	{
 		LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
 		lineRenderer.material = lineColor;// new Material(Shader.Find("Particles/Additive"));
 		//lineRenderer.SetColors(c1, c2);
 		lineRenderer.SetVertexCount(lengthOfLineRenderer);
 		Particles = new List<GameObject>();
-
-	//	QuadTree Qt = new QuadTree(StartPoint);
+		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
+		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
+		_QuadTree = new QuadTree(ParentPrefab.transform.position, scaleOfParentQuad.y, scaleOfParentQuad.x, null);
 	}
-	
+
 	// Update is called once per frame
-	void Update () {
-	//	DrawSquare();
+	void Update()
+	{
 		SpawnParticleOnClick();
 	}
 
-	void DrawSquare()
-	{
-		StartPoint.x = BorderWidth - BorderOffsetX;
-		StartPoint.y = BorderHeight + BorderOffsetY;
+	///////	void DrawSquare()
+	///////	{
+	///////		StartPoint.x = BorderWidth - BorderOffsetX;
+	///////		StartPoint.y = BorderHeight + BorderOffsetY;
+	///////
+	///////		EndPoint.x = BorderWidth - BorderOffsetX;
+	///////		EndPoint.y = -BorderHeight + BorderOffsetY;
+	///////
+	///////		//DrawLine(StartPoint, EndPoint);
+	///////
+	///////
+	///////
+	///////		LineRenderer lineRenderer = GetComponent<LineRenderer>();
+	///////
+	///////		lineRenderer.SetWidth(lineWidth, lineWidth);
+	///////		lineRenderer.SetVertexCount(4); 
+	///////		lineRenderer.SetPosition(0, StartPoint);
+	///////		lineRenderer.SetPosition(1, EndPoint);
+	///////
+	///////		StartPoint.x = -BorderWidth + BorderOffsetX;
+	///////		StartPoint.y = BorderHeight + BorderOffsetY;
+	///////
+	///////		EndPoint.x = -BorderWidth + BorderOffsetX;
+	///////		EndPoint.y = -BorderHeight + BorderOffsetY;
+	///////		lineRenderer.SetPosition(2, EndPoint);
+	///////		lineRenderer.SetPosition(3, StartPoint);
+	/////////		DrawLine1(StartPoint, EndPoint);
+	///////	}
 
-		EndPoint.x = BorderWidth - BorderOffsetX;
-		EndPoint.y = -BorderHeight + BorderOffsetY;
 
-		//DrawLine(StartPoint, EndPoint);
+	/////////void OnDrawGizmosSelected()
+	/////////{
+	/////////	Gizmos.color = new Color(1, 0, 0, 0.5F);
+	/////////	Gizmos.DrawCube(transform.position, new Vector3(100, 1, 1));
+	/////////}
 
-
-
-		LineRenderer lineRenderer = GetComponent<LineRenderer>();
-
-		lineRenderer.SetWidth(lineWidth, lineWidth);
-		lineRenderer.SetVertexCount(4); 
-		lineRenderer.SetPosition(0, StartPoint);
-		lineRenderer.SetPosition(1, EndPoint);
-
-		StartPoint.x = -BorderWidth + BorderOffsetX;
-		StartPoint.y = BorderHeight + BorderOffsetY;
-
-		EndPoint.x = -BorderWidth + BorderOffsetX;
-		EndPoint.y = -BorderHeight + BorderOffsetY;
-		lineRenderer.SetPosition(2, EndPoint);
-		lineRenderer.SetPosition(3, StartPoint);
-//		DrawLine1(StartPoint, EndPoint);
-	}
+	///void DrawLine(Vector3 Start, Vector3 End)
+	///{
+	///	LineRenderer lineRenderer = GetComponent<LineRenderer>();
+	///
+	///	lineRenderer.SetWidth(lineWidth, lineWidth);
+	///	lineRenderer.SetPosition(0, Start);
+	///	lineRenderer.SetPosition(1, End);
+	///
+	///}
 
 
-	void OnDrawGizmosSelected()
-	{
-		Gizmos.color = new Color(1, 0, 0, 0.5F);
-		Gizmos.DrawCube(transform.position, new Vector3(100, 1, 1));
-	}
-
-	void DrawLine(Vector3 Start, Vector3 End)
-	{
-		LineRenderer lineRenderer = GetComponent<LineRenderer>();
-
-		lineRenderer.SetWidth(lineWidth, lineWidth);
-		lineRenderer.SetPosition(0, Start);
-		lineRenderer.SetPosition(1, End);
-
-	}
-
-	
 	void SpawnParticleOnClick()
-	{ 	
-		myRay = Camera.main.ScreenPointToRay(Input.mousePosition); 
-		if (Physics.Raycast (myRay, out hit))  
+	{
+		myRay = Camera.main.ScreenPointToRay(Input.mousePosition);
+		if (Physics.Raycast(myRay, out hit))
 		{
 			//if (Input.GetKey(KeyCode.Mouse0))
 			{
 				if (Input.GetMouseButtonUp(0))
-				{ 
-					Particles.Add(Instantiate(ParticlePrefab, new Vector3(hit.point.x, hit.point.y, hit.point.z), Quaternion.identity) as GameObject);
-					Debug.Log("Particles.len:" + Particles.Count);
+				{
+					//instantiate and add in the list
+					GameObject ParticleObject;
+					Particles.Add(ParticleObject = Instantiate(ParticlePrefab, new Vector3(hit.point.x, hit.point.y, hit.point.z), Quaternion.identity) as GameObject);
+					Debug.Log("Particles.len:" + hit.point);
+					//insert in the QuadTree
+					_QuadTree.Insert(ParticleObject);
 				}
 				if (Input.GetMouseButtonUp(1))
 				{
 					//TODO: fix right click at appropriate time
-					Debug.Log("Obj:" + (hit.transform.gameObject.name));
+					Debug.Log("Pos:" + (hit.transform.gameObject.transform.position));
+					Debug.Log("Scale:" + (hit.transform.gameObject.transform.localScale));
 				}
 			}
 		}
