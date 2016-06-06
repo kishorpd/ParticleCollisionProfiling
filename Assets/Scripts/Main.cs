@@ -41,8 +41,8 @@ public class Main : MonoBehaviour
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
 
-		GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
-		Instantiate(testPrefab, ParentPrefab.transform.position, Quaternion.identity);
+	//	GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
+	//	Instantiate(testPrefab, ParentPrefab.transform.position, Quaternion.identity);
 	}
 
 	// Update is called once per frame

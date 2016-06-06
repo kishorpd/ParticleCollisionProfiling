@@ -17,6 +17,10 @@ public class QuadTree : MonoBehaviour {
 	private QuadTree[]			_ChildNodes;
 	private Rect a;
 
+#if DEBUG
+	private int __SelfQuadrant = 0;
+#endif
+
 	public QuadTree(Vector3 parentCenter, float parentHeight, float parentWidth)
 	{
 		_CurrentDepth = 0;
@@ -49,8 +53,13 @@ public class QuadTree : MonoBehaviour {
 		
 	public void Insert(GameObject particleObject)
 	{
+
+		if (_TotalLeafNodes == 2)//insert first element ofchild;
+			DrawSplitSelf();
+
 		if (_TotalLeafNodes > 3)//insert first element ofchild;
 		{
+			DrawSplitSelf();
 			//insert in the specific QuadTree corresponding to the Quadrant
 			//Insert(particleObject);
 			if (_Particles.Count != 0) //distribute the list
@@ -69,6 +78,10 @@ public class QuadTree : MonoBehaviour {
 					Debug.Log("Leaf:" + (leaf) + "Quadrant:" + (Quadrant));
 					_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(leaf));
 					_ChildNodes[Quadrant].Insert(_Particles[leaf]);
+					
+#if DEBUG
+					_ChildNodes[Quadrant].__SelfQuadrant = Quadrant;
+#endif
 				}
 				_Particles.Clear();
 			}
@@ -79,6 +92,7 @@ public class QuadTree : MonoBehaviour {
 		{
 			_Particles.Add(particleObject);
 		}
+
 		++_TotalLeafNodes;
 	}
 
@@ -106,13 +120,24 @@ public class QuadTree : MonoBehaviour {
 			quadCenter.y = (quadrant == 2) ? (quadCenter.y - (Width / 4)) : quadCenter.y + (Width / 4);
 		}
 		Debug.Log("This.center:" + (this.Center) + "quadCenter:" + (quadCenter));
+		return	quadCenter;
+	}
+
+	void DrawSplitSelf()
+	{
+
+#if DEBUG
+		Debug.Log("DrawSplitSelf---->This.__SelfQuadrant:" + (this.__SelfQuadrant));
+		Debug.Log("DrawSplitSelf---->This._CurrentDepth:" + (this._CurrentDepth));
+#endif
+		Debug.Log("DrawSplitSelf---->This.center:" + (this.Center));
+		Debug.Log("DrawSplitSelf---->This._TotalLeafNodes:" + (this._TotalLeafNodes));
 		GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
 		testPrefab = testPrefab.gameObject;
 		Vector3 prefabScale = testPrefab.transform.localScale;
-		testPrefab.transform.localScale /= (2 * ((_CurrentDepth == 0)? 1:_CurrentDepth));
-		Instantiate(testPrefab, quadCenter, Quaternion.identity);
+		testPrefab.transform.localScale /= (2 * ((_CurrentDepth == 0)? (0.5f):_CurrentDepth));
+		Instantiate(testPrefab, this.Center, Quaternion.identity);
 		testPrefab.transform.localScale = prefabScale;
-		return	quadCenter;
 	}
 
 	int InQuadrant(GameObject particleObject)
