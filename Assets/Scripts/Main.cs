@@ -40,9 +40,7 @@ public class Main : MonoBehaviour
 		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
-
-	//	GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
-	//	Instantiate(testPrefab, ParentPrefab.transform.position, Quaternion.identity);
+		_QuadTree.MainInstance = this;
 	}
 
 	// Update is called once per frame
@@ -51,51 +49,57 @@ public class Main : MonoBehaviour
 		SpawnParticleOnClick();
 	}
 
-	///////	void DrawSquare()
-	///////	{
-	///////		StartPoint.x = BorderWidth - BorderOffsetX;
-	///////		StartPoint.y = BorderHeight + BorderOffsetY;
-	///////
-	///////		EndPoint.x = BorderWidth - BorderOffsetX;
-	///////		EndPoint.y = -BorderHeight + BorderOffsetY;
-	///////
-	///////		//DrawLine(StartPoint, EndPoint);
-	///////
-	///////
-	///////
-	///////		LineRenderer lineRenderer = GetComponent<LineRenderer>();
-	///////
-	///////		lineRenderer.SetWidth(lineWidth, lineWidth);
-	///////		lineRenderer.SetVertexCount(4); 
-	///////		lineRenderer.SetPosition(0, StartPoint);
-	///////		lineRenderer.SetPosition(1, EndPoint);
-	///////
-	///////		StartPoint.x = -BorderWidth + BorderOffsetX;
-	///////		StartPoint.y = BorderHeight + BorderOffsetY;
-	///////
-	///////		EndPoint.x = -BorderWidth + BorderOffsetX;
-	///////		EndPoint.y = -BorderHeight + BorderOffsetY;
-	///////		lineRenderer.SetPosition(2, EndPoint);
-	///////		lineRenderer.SetPosition(3, StartPoint);
-	/////////		DrawLine1(StartPoint, EndPoint);
-	///////	}
+/*
+ * 
+ *			Tried multiple ways to draw lines. 
+ * 
+ * 
+		void DrawSquare()
+		{
+			StartPoint.x = BorderWidth - BorderOffsetX;
+			StartPoint.y = BorderHeight + BorderOffsetY;
+	
+			EndPoint.x = BorderWidth - BorderOffsetX;
+			EndPoint.y = -BorderHeight + BorderOffsetY;
+	
+			//DrawLine(StartPoint, EndPoint);
+	
+	
+	
+			LineRenderer lineRenderer = GetComponent<LineRenderer>();
+	
+			lineRenderer.SetWidth(lineWidth, lineWidth);
+			lineRenderer.SetVertexCount(4); 
+			lineRenderer.SetPosition(0, StartPoint);
+			lineRenderer.SetPosition(1, EndPoint);
+	
+			StartPoint.x = -BorderWidth + BorderOffsetX;
+			StartPoint.y = BorderHeight + BorderOffsetY;
+	
+			EndPoint.x = -BorderWidth + BorderOffsetX;
+			EndPoint.y = -BorderHeight + BorderOffsetY;
+			lineRenderer.SetPosition(2, EndPoint);
+			lineRenderer.SetPosition(3, StartPoint);
+	//		DrawLine1(StartPoint, EndPoint);
+		}
 
 
-	/////////void OnDrawGizmosSelected()
-	/////////{
-	/////////	Gizmos.color = new Color(1, 0, 0, 0.5F);
-	/////////	Gizmos.DrawCube(transform.position, new Vector3(100, 1, 1));
-	/////////}
+	void OnDrawGizmosSelected()
+	{
+		Gizmos.color = new Color(1, 0, 0, 0.5F);
+		Gizmos.DrawCube(transform.position, new Vector3(100, 1, 1));
+	}
 
-	///void DrawLine(Vector3 Start, Vector3 End)
-	///{
-	///	LineRenderer lineRenderer = GetComponent<LineRenderer>();
-	///
-	///	lineRenderer.SetWidth(lineWidth, lineWidth);
-	///	lineRenderer.SetPosition(0, Start);
-	///	lineRenderer.SetPosition(1, End);
-	///
-	///}
+	/void DrawLine(Vector3 Start, Vector3 End)
+	/{
+	/	LineRenderer lineRenderer = GetComponent<LineRenderer>();
+	/
+	/	lineRenderer.SetWidth(lineWidth, lineWidth);
+	/	lineRenderer.SetPosition(0, Start);
+	/	lineRenderer.SetPosition(1, End);
+	/
+	/}
+ */
 
 
 	void SpawnParticleOnClick()
@@ -124,4 +128,14 @@ public class Main : MonoBehaviour
 		}
 	}
 
+	public void SpawnSplit(int CurrentDepth, Vector3 Center)
+	{
+		GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
+		testPrefab = testPrefab.gameObject;
+		Vector3 prefabScale = testPrefab.transform.localScale;
+		Debug.Log("The scale:"+(testPrefab.transform.localScale /= (2 * ((CurrentDepth == 0) ? (0.5f) : CurrentDepth))));
+		Instantiate(testPrefab, Center, Quaternion.identity);
+		testPrefab.transform.localScale = prefabScale;
+
+	}
 }
