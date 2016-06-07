@@ -2,7 +2,7 @@
 using System.Collections;
 using System.Collections.Generic;
 
-public class QuadTree {// : MonoBehaviour {
+public class QuadTree {
 
 	public float Height { get; set; }
 	public float Width { get; set; }
@@ -10,12 +10,12 @@ public class QuadTree {// : MonoBehaviour {
 	public Main MainInstance { get; set; }
 
 	private int _TotalLeafNodes { get; set; }
-	private int _CurrentDepth = 0;//	{ get; set; }
+	private int _CurrentDepth = 0;
 	public static int _MaxDepth { get; set; }
 
-	private QuadTree			_ParentNode;
-	private Dictionary<int, QuadTree> _ChildNodes = new Dictionary<int, QuadTree>();
-	private GameObject			_ChildNode;
+	private QuadTree					_ParentNode;
+	private GameObject					_ChildNode = null;
+	private Dictionary<int, QuadTree>	_ChildNodes = new Dictionary<int, QuadTree>();
 
 #if DEBUG
 	private int __SelfQuadrant = 0;
@@ -24,21 +24,16 @@ public class QuadTree {// : MonoBehaviour {
 	public QuadTree(Vector3 parentCenter, float parentHeight, float parentWidth)
 	{
 		_CurrentDepth = 0;
-
 		Height = parentHeight;
 		Width = parentWidth;
 		Center = parentCenter;
 		_ParentNode = null;
-		//Debug.Log(">>>>>>>>>>>>>>>>>>>>>>>>Quadrant:" + parentCenter);
-		//_Particles = new List<GameObject>();
 	}
 
 
 	private QuadTree(QuadTree parent)
 	{
 		_CurrentDepth = parent._CurrentDepth + 1;
-		//Debug.Log("Depth:" + _CurrentDepth);
-
 		Height = parent.Height / 2;
 		Width = parent.Width / 2;
 		_ParentNode = parent;
@@ -98,8 +93,28 @@ public class QuadTree {// : MonoBehaviour {
 			}
 				_ChildNodes[Quadrant].Insert(particleObject);
 		}
-		//Debug.Log(">>>>>>>>>>>>>>>>>>>>>>>>Quadrant:" + Quadrant + "Depth:" + _CurrentDepth);
 		++_TotalLeafNodes;
+	}
+
+	public void Clear()
+	{
+		if(_TotalLeafNodes != 0)
+		{
+			if (_ChildNode == null)
+			{
+				for (int leaf = 0; leaf < 4; ++leaf)
+				{
+					if (_ChildNodes.ContainsKey(leaf))
+					{
+						_ChildNodes[leaf].Clear();
+					}
+				}
+			}
+			else 
+			{
+				_ChildNode = null;
+			}
+		}
 	}
 
 	Vector3 GetCenterOfQuadrant(int quadrant)
@@ -116,7 +131,6 @@ public class QuadTree {// : MonoBehaviour {
 			quadCenter.x += (Height / 4);
 			quadCenter.y = (quadrant == 2) ? (quadCenter.y - (Width / 4)) : quadCenter.y + (Width / 4);
 		}
-		//Debug.Log("center:" + (Center) + "quadCenter:" + (quadCenter));
 		return	quadCenter;
 	}
 
@@ -132,8 +146,8 @@ public class QuadTree {// : MonoBehaviour {
 		//|___|___|
 		//| 3 | 2 |
 		//|___|___|
+		// The quadrants are numbered in this manner.
 
-		//Debug.Log("center:" + (Center) + "Depth:" + _CurrentDepth);
 		return (particleObject.transform.position.y < Center.y) ?					//if (object is below X axis) {execute first parenthesis} else {second}
 				((particleObject.transform.position.x < Center.x) ? 3 : 2) : 		//if (the object is to left of y axis and below X axis) return 3 else 2
 					((particleObject.transform.position.x < Center.x) ? 0 : 1);		//if (the object is to left of y axis and above X axis) return 0 else 1

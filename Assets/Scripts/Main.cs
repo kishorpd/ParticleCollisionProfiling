@@ -19,6 +19,7 @@ public class Main : MonoBehaviour
 	public GameObject ParentPrefab;
 	public GameObject ParticlePrefab;
 	List<GameObject> Particles;
+	List<GameObject> Splitters;
 
 	public Material lineColor;
 
@@ -32,10 +33,6 @@ public class Main : MonoBehaviour
 	// Use this for initialization
 	void Start()
 	{
-		LineRenderer lineRenderer = gameObject.AddComponent<LineRenderer>();
-		lineRenderer.material = lineColor;// new Material(Shader.Find("Particles/Additive"));
-		//lineRenderer.SetColors(c1, c2);
-		lineRenderer.SetVertexCount(lengthOfLineRenderer);
 		Particles = new List<GameObject>();
 		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
@@ -48,58 +45,6 @@ public class Main : MonoBehaviour
 	{
 		SpawnParticleOnClick();
 	}
-
-/*
- * 
- *			Tried multiple ways to draw lines. 
- * 
- * 
-		void DrawSquare()
-		{
-			StartPoint.x = BorderWidth - BorderOffsetX;
-			StartPoint.y = BorderHeight + BorderOffsetY;
-	
-			EndPoint.x = BorderWidth - BorderOffsetX;
-			EndPoint.y = -BorderHeight + BorderOffsetY;
-	
-			//DrawLine(StartPoint, EndPoint);
-	
-	
-	
-			LineRenderer lineRenderer = GetComponent<LineRenderer>();
-	
-			lineRenderer.SetWidth(lineWidth, lineWidth);
-			lineRenderer.SetVertexCount(4); 
-			lineRenderer.SetPosition(0, StartPoint);
-			lineRenderer.SetPosition(1, EndPoint);
-	
-			StartPoint.x = -BorderWidth + BorderOffsetX;
-			StartPoint.y = BorderHeight + BorderOffsetY;
-	
-			EndPoint.x = -BorderWidth + BorderOffsetX;
-			EndPoint.y = -BorderHeight + BorderOffsetY;
-			lineRenderer.SetPosition(2, EndPoint);
-			lineRenderer.SetPosition(3, StartPoint);
-	//		DrawLine1(StartPoint, EndPoint);
-		}
-
-
-	void OnDrawGizmosSelected()
-	{
-		Gizmos.color = new Color(1, 0, 0, 0.5F);
-		Gizmos.DrawCube(transform.position, new Vector3(100, 1, 1));
-	}
-
-	/void DrawLine(Vector3 Start, Vector3 End)
-	/{
-	/	LineRenderer lineRenderer = GetComponent<LineRenderer>();
-	/
-	/	lineRenderer.SetWidth(lineWidth, lineWidth);
-	/	lineRenderer.SetPosition(0, Start);
-	/	lineRenderer.SetPosition(1, End);
-	/
-	/}
- */
 
 
 	void SpawnParticleOnClick()
@@ -121,6 +66,7 @@ public class Main : MonoBehaviour
 				if (Input.GetMouseButtonUp(1))
 				{
 					//TODO: fix right click at appropriate time
+					ClearQuadtree();
 					Debug.Log("Pos:" + (hit.transform.gameObject.transform.position));
 					Debug.Log("Scale:" + (hit.transform.gameObject.transform.localScale));
 				}
@@ -130,12 +76,25 @@ public class Main : MonoBehaviour
 
 	public void SpawnSplit(int CurrentDepth, Vector3 Center)
 	{
-		GameObject testPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
-		testPrefab = testPrefab.gameObject;
-		Vector3 prefabScale = testPrefab.transform.localScale;
-		Debug.Log("The scale:"+(testPrefab.transform.localScale /= (2 * ((CurrentDepth == 0) ? (0.5f) : CurrentDepth))));
-		Instantiate(testPrefab, Center, Quaternion.identity);
-		testPrefab.transform.localScale = prefabScale;
+		GameObject splittingPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
+		splittingPrefab = splittingPrefab.gameObject;
+		Vector3 prefabScale = splittingPrefab.transform.localScale;
+		Debug.Log("The scale:"+(splittingPrefab.transform.localScale /= (2 * ((CurrentDepth == 0) ? (0.5f) : CurrentDepth))));
+		GameObject temp =  Instantiate(splittingPrefab, Center, Quaternion.identity) as GameObject;
+		splittingPrefab.transform.localScale = prefabScale;
+		//Splitters.Add(temp as GameObject);
+	}
 
+	public void ClearQuadtree()
+	{
+		//foreach (GameObject splitPrefab in Splitters)
+		//	Destroy(splitPrefab);
+		//Splitters.Clear();
+		foreach (GameObject particlePrefab in Particles)
+			Destroy(particlePrefab);
+		Particles.Clear();
+		_QuadTree.Clear();
+
+		Application.LoadLevel(0); 
 	}
 }
