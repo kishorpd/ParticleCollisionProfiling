@@ -28,6 +28,7 @@ public class QuadTree {
 		Width = parentWidth;
 		Center = parentCenter;
 		_ParentNode = null;
+		_TotalLeafNodes = 0;
 	}
 
 
@@ -38,6 +39,7 @@ public class QuadTree {
 		Width = parent.Width / 2;
 		_ParentNode = parent;
 		MainInstance = parent.MainInstance;
+		_TotalLeafNodes = 0;
 	}
 
 
@@ -61,6 +63,7 @@ public class QuadTree {
 	public void Insert(GameObject particleObject)
 	{
 
+		Debug.Log("Insert occured");
 		int Quadrant = InQuadrant(particleObject);
 		if (_TotalLeafNodes == 0)
 		{
@@ -69,20 +72,28 @@ public class QuadTree {
 		}
 		else if (_TotalLeafNodes == 1)
 		{ 
+			//spawn split prefab
+			DrawSplitSelf();
+
 			//set the cached child{gameobject} to corresponding child QuadTree
 			int tempQuadrant = InQuadrant(_ChildNode);
 			_ChildNodes[tempQuadrant] = new QuadTree(this);
 			_ChildNodes[tempQuadrant].SetCenter(GetCenterOfQuadrant(tempQuadrant));
-			
+			_ChildNodes[tempQuadrant].Insert(_ChildNode);
+
 			//clear the cached childNode
 			_ChildNode = null;
-			
+
+			Debug.Log("tempQuadrant = " + tempQuadrant + "Quadrant = " + Quadrant);
 			//set the parameter in respective child QuadTree
-			_ChildNodes[Quadrant] = new QuadTree(this);
-			_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
+			if (tempQuadrant != Quadrant)
+			{ 
+				_ChildNodes[Quadrant] = new QuadTree(this);
+				_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
+			}
+
+			_ChildNodes[Quadrant].Insert(particleObject);
 		
-			//spawn split prefab
-			DrawSplitSelf();
 		}
 		else
 		{

@@ -68,8 +68,6 @@ public class Main : MonoBehaviour
 				{
 					//TODO: fix right click at appropriate time
 					ClearQuadtree();
-					Debug.Log("Pos:" + (hit.transform.gameObject.transform.position));
-					Debug.Log("Scale:" + (hit.transform.gameObject.transform.localScale));
 				}
 			}
 		}
@@ -79,35 +77,39 @@ public class Main : MonoBehaviour
 	{
 		GameObject splittingPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
 		splittingPrefab = splittingPrefab.gameObject;
+		
+		//grab prefab data before spawning
 		Vector3 prefabScale = splittingPrefab.transform.localScale;
-		Debug.Log("The scale:" + (prefabScale.y /= (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)))) + "The scale:" + CurrentDepth);
-		splittingPrefab.transform.localScale = prefabScale;
-
-
 		Vector3 prefabRotation = splittingPrefab.transform.localEulerAngles;
 		
+		//set scale acacording to depth
+		prefabScale.y /= (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
+		splittingPrefab.transform.localScale = prefabScale;
+
 		//instantiated here
-		GameObject temp;// = Instantiate(splittingPrefab, Center, Quaternion.identity) as GameObject;
+		GameObject temp;
 		Splitters.Add(temp = Instantiate(splittingPrefab, Center, Quaternion.identity) as GameObject);
+
+		//change rotation of the prefab to spawn the same one horizontally
 		prefabRotation.z += 90;
 		splittingPrefab.transform.localEulerAngles = prefabRotation;
-		GameObject temp1;// = Instantiate(splittingPrefab, Center, transform.rotation) as GameObject;
+		GameObject temp1;
 		Splitters.Add(temp1 = Instantiate(splittingPrefab, Center, transform.rotation) as GameObject);
 
 		temp1.transform.eulerAngles = prefabRotation;
 
-
 		//reset data of prefab!
+		{ 
+			//reset rotation
+			prefabRotation.z -= 90;
+			splittingPrefab.transform.localEulerAngles = prefabRotation;
 
-		//reset rotation
-		prefabRotation.z -= 90;
-		splittingPrefab.transform.localEulerAngles = prefabRotation;
-		
-		//reset scale
-		Debug.Log("The scale:" + (prefabScale.y *= (((float)2) * (Mathf.Pow(2, CurrentDepth -1)))) + "The scale:" + CurrentDepth);
-		splittingPrefab.transform.localScale = prefabScale;
-		//Splitters.Add(temp as GameObject);
-		//Splitters.Add(temp1 as GameObject);
+			//reset scale
+			prefabScale.y *= (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
+			splittingPrefab.transform.localScale = prefabScale;
+		}
+
+		Debug.Log("Split at depth:" + CurrentDepth);
 	}
 
 	public void ClearQuadtree()
@@ -115,14 +117,18 @@ public class Main : MonoBehaviour
 		foreach (GameObject splitPrefab in Splitters)
 			Destroy(splitPrefab);
 		Splitters.Clear();
+
+		_QuadTree.Clear();
+
 		foreach (GameObject particlePrefab in Particles)
 			Destroy(particlePrefab);
 		Particles.Clear();
-		_QuadTree.Clear();
 
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
 		_QuadTree.MainInstance = this;
+
+		//for restarting this level.
 		//Application.LoadLevel(0); 
 	}
 }
