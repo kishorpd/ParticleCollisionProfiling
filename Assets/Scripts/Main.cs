@@ -77,10 +77,30 @@ public class Main : MonoBehaviour
 	public void SpawnSplit(int CurrentDepth, Vector3 Center)
 	{
 		GameObject splittingPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
-		splittingPrefab = splittingPrefab.gameObject;
+		//csplittingPrefab = splittingPrefab.gameObject;
 		Vector3 prefabScale = splittingPrefab.transform.localScale;
-		Debug.Log("The scale:"+(splittingPrefab.transform.localScale /= (2 * ((CurrentDepth == 0) ? (0.5f) : CurrentDepth))));
-		GameObject temp =  Instantiate(splittingPrefab, Center, Quaternion.identity) as GameObject;
+		Debug.Log("The scale:" + (prefabScale.y /= (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)))) + "The scale:" + CurrentDepth);
+		splittingPrefab.transform.localScale = prefabScale;
+
+
+		Vector3 prefabRotation = splittingPrefab.transform.localEulerAngles;
+		
+		//instantiated here
+		GameObject temp = Instantiate(splittingPrefab, Center, Quaternion.identity) as GameObject;
+		prefabRotation.z += 90;
+		splittingPrefab.transform.localEulerAngles = prefabRotation;
+		GameObject temp1 = Instantiate(splittingPrefab, Center, transform.rotation) as GameObject;
+
+		temp1.transform.eulerAngles = prefabRotation;//RotateAround(transform.position, Vector3.right, prefabRotation.z);
+		//reset data of prefab!
+
+		//reset rotation
+		prefabRotation.z -= 90;
+		splittingPrefab.transform.localEulerAngles = prefabRotation;
+		
+		//reset scale
+//		Debug.Log("The scale:" + (prefabScale.y *= (((float)2) * ((CurrentDepth == 0) ? (0.5f) : (float)CurrentDepth))));
+		Debug.Log("The scale:" + (prefabScale.y *= (((float)2) * (Mathf.Pow(2, CurrentDepth -1)))) + "The scale:" + CurrentDepth);
 		splittingPrefab.transform.localScale = prefabScale;
 		//Splitters.Add(temp as GameObject);
 	}

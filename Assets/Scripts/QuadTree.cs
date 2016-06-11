@@ -11,7 +11,7 @@ public class QuadTree {
 
 	private int _TotalLeafNodes { get; set; }
 	private int _CurrentDepth = 0;
-	public static int _MaxDepth { get; set; }
+	public static int SMaxDepth { get; set; }
 
 	private QuadTree					_ParentNode;
 	private GameObject					_ChildNode = null;
@@ -52,8 +52,8 @@ public class QuadTree {
 		_CurrentDepth = parent._CurrentDepth + 1;
 		Debug.Log("Depth:" + _CurrentDepth);
 
-		Height = parent.Height / 2;
-		Width = parent.Width / 2;
+		Height = parent.Height * 0.5f;
+		Width = parent.Width * 0.5f;
 		_ParentNode = parent;
 		Center = parentCenter;
 	}
