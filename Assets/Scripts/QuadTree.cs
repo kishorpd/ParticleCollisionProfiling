@@ -16,6 +16,7 @@ public class QuadTree {
 	private QuadTree					_ParentNode;
 	private GameObject					_ChildNode = null;
 	private Dictionary<int, QuadTree>	_ChildNodes = new Dictionary<int, QuadTree>();
+	private bool _PartitionDrawn = false;
 
 #if DEBUG
 	private int __SelfQuadrant = 0;
@@ -60,25 +61,32 @@ public class QuadTree {
 		Center = parentCenter;
 	}
 		
-	public void Insert(GameObject particleObject)
+	public bool Insert(GameObject particleObject)
 	{
 
-		Debug.Log("Insert occured");
 		int Quadrant = InQuadrant(particleObject);
 		if (_TotalLeafNodes == 0)
 		{
  			//insert the childnode
 			_ChildNode = particleObject;
+			++_TotalLeafNodes;
+			return true;
 		}
 		else if (_TotalLeafNodes == 1)
-		{ 
+		{
+			if (_ChildNode.transform.position == particleObject.transform.position)
+			{
+				return false;
+			}
 			//spawn split prefab
-			DrawSplitSelf();
+			if(MainInstance.DisplayPartitions)
+				ViewPartitions();
 
 			//set the cached child{gameobject} to corresponding child QuadTree
 			int tempQuadrant = InQuadrant(_ChildNode);
 			_ChildNodes[tempQuadrant] = new QuadTree(this);
 			_ChildNodes[tempQuadrant].SetCenter(GetCenterOfQuadrant(tempQuadrant));
+			//not returning anything from this one because we are in middle of partitioning
 			_ChildNodes[tempQuadrant].Insert(_ChildNode);
 
 			//clear the cached childNode
@@ -92,7 +100,8 @@ public class QuadTree {
 				_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
 			}
 
-			_ChildNodes[Quadrant].Insert(particleObject);
+			++_TotalLeafNodes;
+			return _ChildNodes[Quadrant].Insert(particleObject);
 		
 		}
 		else
@@ -102,9 +111,9 @@ public class QuadTree {
 				_ChildNodes[Quadrant] = new QuadTree(this);
 				_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
 			}
-				_ChildNodes[Quadrant].Insert(particleObject);
+			++_TotalLeafNodes;
+			return _ChildNodes[Quadrant].Insert(particleObject);
 		}
-		++_TotalLeafNodes;
 	}
 
 	public void Clear()
@@ -147,7 +156,7 @@ public class QuadTree {
 
 	void DrawSplitSelf()
 	{
-		MainInstance.SpawnSplit(_CurrentDepth, this.Center); 
+		MainInstance._SpawnPartitioner(_CurrentDepth, this.Center); 
 	}
 
 	int InQuadrant(GameObject particleObject)
@@ -159,10 +168,131 @@ public class QuadTree {
 		//|___|___|
 		// The quadrants are numbered in this manner.
 
-		return (particleObject.transform.position.y < Center.y) ?					//if (object is below X axis) {execute first parenthesis} else {second}
-				((particleObject.transform.position.x < Center.x) ? 3 : 2) : 		//if (the object is to left of y axis and below X axis) return 3 else 2
-					((particleObject.transform.position.x < Center.x) ? 0 : 1);		//if (the object is to left of y axis and above X axis) return 0 else 1
+		return InQuadrant(particleObject.transform.position);
 
 	}
 
+	int InQuadrant(Vector3 position)
+	{
+		// ___ ___
+		//| 0 | 1 |
+		//|___|___|
+		//| 3 | 2 |
+		//|___|___|
+		// The quadrants are numbered in this manner.
+
+		return (position.y < Center.y) ?					//if (object is below X axis) {execute first parenthesis} else {second}
+				((position.x < Center.x) ? 3 : 2) : 		//if (the object is to left of y axis and below X axis) return 3 else 2
+					((position.x < Center.x) ? 0 : 1);		//if (the object is to left of y axis and above X axis) return 0 else 1
+
+	}
+
+	public GameObject ParticleUnderCursor(Vector3 CursorPosition)
+	{
+
+		if (_TotalLeafNodes == 0)
+		{
+			//no particle under cursor 
+			return null;
+		}
+		else
+		{
+			int Quadrant = InQuadrant(CursorPosition);
+			return (_TotalLeafNodes == 1) ? _ChildNode : 
+					((_ChildNodes.ContainsKey(Quadrant)) ? 
+						_ChildNodes[Quadrant].ParticleUnderCursor(CursorPosition) : null);
+		}
+
+	}
+
+	bool ParticleUnderCursor(GameObject particle,Vector3 CursorPosition)
+	{
+		float Radius = particle.transform.localScale.y;
+		return IsWithinRadius2D(CursorPosition, Radius);
+	}
+
+	bool IsWithinRadius2D(Vector3 position, float Radius)
+	{
+		return (Radius * Radius == ((position.x * position.x) + (position.y * position.y)));
+	}
+
+	bool IsWithinRadius3D(Vector3 position, float Radius)
+	{
+		return (Radius * Radius == ((position.x * position.x) + (position.y * position.y) + (position.z * position.z)));
+	}
+
+	GameObject FindParticleObject(GameObject ParticleObject)
+	{
+
+		if (_TotalLeafNodes == 0)
+		{
+			return _ChildNode;
+		}
+		else
+		{
+			int Quadrant = InQuadrant(ParticleObject);
+			return (_TotalLeafNodes == 1) ? _ChildNode :
+					((_ChildNodes.ContainsKey(Quadrant)) ?
+						_ChildNodes[Quadrant].FindParticleObject(ParticleObject) : null);
+		}
+	}
+
+	QuadTree FindParticleParent(GameObject ParticleObject)
+	{
+		if (_TotalLeafNodes == 0)
+		{
+			return this;
+		}
+		else
+		{
+			int Quadrant = InQuadrant(ParticleObject);
+			return (_TotalLeafNodes == 1) ? this :
+					((_ChildNodes.ContainsKey(Quadrant)) ?
+						_ChildNodes[Quadrant].FindParticleParent(ParticleObject) : null);
+		}
+	}
+
+	public bool RemoveParticle(GameObject ParticleObject)
+	{
+		QuadTree temp= FindParticleParent(ParticleObject);
+		if (temp != null)
+		{
+			temp._ChildNode = null;
+			--temp._TotalLeafNodes;
+			temp._PartitionDrawn = false;
+			return true;
+		}
+		return false;
+	}
+
+	public void ViewPartitions()
+	{
+		if (_TotalLeafNodes > 0)
+		{
+			if (!_PartitionDrawn)
+				DrawSplitSelf();
+
+			_PartitionDrawn = true;
+
+			for (int leaf = 0; leaf < 4; ++leaf)
+			{
+				if (_ChildNodes.ContainsKey(leaf))
+					_ChildNodes[leaf].ViewPartitions();
+			}
+		}
+	}
+	public void ClearPartitionDrawn()
+	{
+		if (_TotalLeafNodes > 0)
+		{
+			if (_PartitionDrawn)
+				_PartitionDrawn = false;
+
+			for (int leaf = 0; leaf < 4; ++leaf)
+			{
+				if (_ChildNodes.ContainsKey(leaf))
+					_ChildNodes[leaf].ClearPartitionDrawn();
+			}
+		}
+	}
 }
