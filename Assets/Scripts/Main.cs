@@ -138,39 +138,33 @@ public class Main : MonoBehaviour
 
 	public void _SpawnPartitioner(int CurrentDepth, Vector3 Center)
 	{
-		GameObject partitionPrefab = (GameObject)Resources.Load("Prefabs/Seperator");
-		partitionPrefab = partitionPrefab.gameObject;
+		float scaleFactor = (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
 		
+		GameObject partitionPrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
+
+		Transform linesVerticle = partitionPrefab.transform.GetChild(0);
+		Transform linesHorizontal = partitionPrefab.transform.GetChild(1);
+
 		//grab prefab data before spawning
-		Vector3 prefabScale = partitionPrefab.transform.localScale;
-		Vector3 prefabRotation = partitionPrefab.transform.localEulerAngles;
+		Vector3 prefabScale = linesVerticle.localScale;
 		
 		//set scale acacording to depth
-		prefabScale.y /= (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
-		partitionPrefab.transform.localScale = prefabScale;
+		prefabScale.y /= scaleFactor;
+		linesVerticle.localScale = prefabScale;
+		linesHorizontal.localScale = prefabScale;
+		prefabScale.y *= scaleFactor;
 
 		//instantiated here
 		GameObject temp;
 		_Partitioners.Add(temp = Instantiate(partitionPrefab, Center, Quaternion.identity) as GameObject);
 
-		//change rotation of the prefab to spawn the same one horizontally
-		prefabRotation.z += 90;
-		partitionPrefab.transform.localEulerAngles = prefabRotation;
-		GameObject temp1;
-		_Partitioners.Add(temp1 = Instantiate(partitionPrefab, Center, transform.rotation) as GameObject);
-
-		temp1.transform.eulerAngles = prefabRotation;
-
 		//reset data of prefab!
 		{ 
-			//reset rotation
-			prefabRotation.z -= 90;
-			partitionPrefab.transform.localEulerAngles = prefabRotation;
-
 			//reset scale
-			prefabScale.y *= (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
-			partitionPrefab.transform.localScale = prefabScale;
+			linesVerticle.localScale = prefabScale;
+			linesHorizontal.localScale = prefabScale;
 		}
+
 
 		Debug.Log("Split at depth:" + CurrentDepth);
 	}
