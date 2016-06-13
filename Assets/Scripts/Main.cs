@@ -193,7 +193,14 @@ public class Main : MonoBehaviour
 	}
 
 	void _DeletePartitioning()
-	{ 
+	{
+		foreach (GameObject partitionPrefab in _Partitioners)
+			Destroy(partitionPrefab);
+		_Partitioners.Clear();
+	}
+
+	void _DeactivatePartitioning()
+	{
 		foreach (GameObject partitionPrefab in _Partitioners)
 			Destroy(partitionPrefab);
 		_Partitioners.Clear();

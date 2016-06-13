@@ -281,6 +281,7 @@ public class QuadTree {
 			}
 		}
 	}
+
 	public void ClearPartitionDrawn()
 	{
 		if (_TotalLeafNodes > 0)
