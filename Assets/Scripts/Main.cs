@@ -209,10 +209,6 @@ public class Main : MonoBehaviour
 		_Partitioners.Clear();
 	}
 
-	void _DeactivatePartitioning()
-	{
-	}
-
 	public void TogglePartitionView()
 	{
 		if (!DisplayPartitions)

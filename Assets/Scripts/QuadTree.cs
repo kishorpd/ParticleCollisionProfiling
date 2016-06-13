@@ -14,7 +14,6 @@ public class QuadTree {
 	public static int SMaxDepth { get; set; }
 
 	private QuadTree					_ParentNode;
-	private GameObject					_SelfPartitionPrefab = null;
 	private GameObject					_ChildNode = null;
 	private Dictionary<int, QuadTree>	_ChildNodes = new Dictionary<int, QuadTree>();
 	private bool _PartitionDrawn = false;
@@ -156,7 +155,7 @@ public class QuadTree {
 
 	void DrawSplitSelf()
 	{
-			_SelfPartitionPrefab = MainInstance._SpawnPartitioner(_CurrentDepth, this.Center);
+			MainInstance._SpawnPartitioner(_CurrentDepth, this.Center);
 	}
 
 
@@ -267,130 +266,6 @@ public class QuadTree {
 		return false;
 	}
 
-	public void ViewPartitions()
-	{
-		if (_TotalLeafNodes > 0)
-		{
-			if (!_PartitionDrawn)
-				 DrawSplitSelf();
 
 
-			for (int leaf = 0; leaf < 4; ++leaf)
-			{
-				if (_ChildNodes.ContainsKey(leaf))
-					_ChildNodes[leaf].ViewPartitions();
-			}
-			_PartitionDrawn = true;
-		}
-	}
-
-
-	public void DisablePartitionVisibility()
-	{
-
-		if (_TotalLeafNodes > 0)
-		{
-			//if (_PartitionDrawn)
-			{
-				for (int leaf = 0; leaf < 4; ++leaf)
-				{
-					if (_ChildNodes.ContainsKey(leaf))
-						_ChildNodes[leaf].DisablePartitionVisibility();
-				}
-
-				if (_SelfPartitionPrefab != null)
-				{
-					Transform linesVerticle = _SelfPartitionPrefab.transform.GetChild(0);
-					Transform linesHorizontal = _SelfPartitionPrefab.transform.GetChild(1);
-
-					//Toggle disable script
-					SpriteRenderer ImageDisplayed = linesVerticle.gameObject.GetComponent<SpriteRenderer>();
-					ImageDisplayed.enabled = false;
-					ImageDisplayed = linesHorizontal.gameObject.GetComponent<SpriteRenderer>();
-					ImageDisplayed.enabled = false;
-					_PartitionDrawn = false;
-				}
-			}
-		}
-	}
-
-	public void EnablePartitionVisibility()
-	{
-
-		if (_TotalLeafNodes > 0)
-		{
-			//if (_PartitionDrawn)
-			{
-				for (int leaf = 0; leaf < 4; ++leaf)
-				{
-					if (_ChildNodes.ContainsKey(leaf))
-						_ChildNodes[leaf].EnablePartitionVisibility();
-				}
-
-					Debug.Log(">>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>>");
-					if (_SelfPartitionPrefab != null)
-					{
-						Transform linesVerticle = _SelfPartitionPrefab.transform.GetChild(0);
-						Transform linesHorizontal = _SelfPartitionPrefab.transform.GetChild(1);
-
-
-						//Toggle disable script
-						SpriteRenderer ImageDisplayed = linesVerticle.gameObject.GetComponent<SpriteRenderer>();
-						ImageDisplayed.enabled = true;
-						ImageDisplayed = linesHorizontal.gameObject.GetComponent<SpriteRenderer>();
-						ImageDisplayed.enabled = true;
-						_PartitionDrawn = true;
-					}
-					else 
-					{
-						DrawSplitSelf();
-					}
-			}
-		}
-	}
-
-	public void TogglePartitionVisibility()
-	{
-
-		if (_TotalLeafNodes > 0)
-		{
-			//if (_PartitionDrawn)
-			{
-				for (int leaf = 0; leaf < 4; ++leaf)
-				{
-					if (_ChildNodes.ContainsKey(leaf))
-						_ChildNodes[leaf].TogglePartitionVisibility();
-				}
-
-				if (_SelfPartitionPrefab != null)
-				{
-					Transform linesVerticle = _SelfPartitionPrefab.transform.GetChild(0);
-					Transform linesHorizontal = _SelfPartitionPrefab.transform.GetChild(1);
-
-					//Toggle disable script
-
-					SpriteRenderer ImageDisplayed = linesVerticle.gameObject.GetComponent<SpriteRenderer>();
-					ImageDisplayed.enabled = !ImageDisplayed.enabled;
-					ImageDisplayed = linesHorizontal.gameObject.GetComponent<SpriteRenderer>();
-					ImageDisplayed.enabled = !ImageDisplayed.enabled;
-					_PartitionDrawn = !_PartitionDrawn;
-				}
-			}
-		}
-	}
-
-	public void ClearPartitionDrawn()
-	{
-		if (_TotalLeafNodes > 0)
-		{
-			if (_PartitionDrawn)
-				_PartitionDrawn = false;
-
-			for (int leaf = 0; leaf < 4; ++leaf)
-			{
-				if (_ChildNodes.ContainsKey(leaf))
-					_ChildNodes[leaf].ClearPartitionDrawn();
-			}
-		}
-	}
 }
