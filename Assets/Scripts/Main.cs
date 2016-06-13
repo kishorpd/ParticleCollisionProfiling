@@ -32,6 +32,8 @@ public class Main : MonoBehaviour
 	private GameObject _ObjectBeingDragged;
 	public bool _Paint = false;
 
+	private GameObject _PartitionPrefab;
+
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
 
@@ -53,6 +55,7 @@ public class Main : MonoBehaviour
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
 		_QuadTree.MainInstance = this;
 		_CursorMode = CursorMode.NORMAL;
+		_PartitionPrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
 	}
 
 	// Update is called once per frame
@@ -136,27 +139,31 @@ public class Main : MonoBehaviour
 				}//switch end
 	}
 
-	public void _SpawnPartitioner(int CurrentDepth, Vector3 Center)
+	public GameObject _SpawnPartitioner(int CurrentDepth, Vector3 Center)
 	{
 		float scaleFactor = (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
 		
-		GameObject partitionPrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
 
-		Transform linesVerticle = partitionPrefab.transform.GetChild(0);
-		Transform linesHorizontal = partitionPrefab.transform.GetChild(1);
+		Transform linesVerticle = _PartitionPrefab.transform.GetChild(0);
+		Transform linesHorizontal = _PartitionPrefab.transform.GetChild(1);
+
+
 
 		//grab prefab data before spawning
 		Vector3 prefabScale = linesVerticle.localScale;
 		
 		//set scale acacording to depth
 		prefabScale.y /= scaleFactor;
+		prefabScale.x = 5;
+		//prefabScale.x /= scaleFactor / 2;
 		linesVerticle.localScale = prefabScale;
 		linesHorizontal.localScale = prefabScale;
 		prefabScale.y *= scaleFactor;
-
+		//prefabScale.x *= scaleFactor/2;
+		Center.z = 10;
 		//instantiated here
 		GameObject temp;
-		_Partitioners.Add(temp = Instantiate(partitionPrefab, Center, Quaternion.identity) as GameObject);
+		_Partitioners.Add(temp = Instantiate(_PartitionPrefab, Center, Quaternion.identity) as GameObject);
 
 		//reset data of prefab!
 		{ 
@@ -165,8 +172,17 @@ public class Main : MonoBehaviour
 			linesHorizontal.localScale = prefabScale;
 		}
 
+		if (!DisplayPartitions)
+		{
+			temp.SetActive(false);
+		}
+		else
+		{ 
+			temp.SetActive(true);
+		}
 
 		Debug.Log("Split at depth:" + CurrentDepth);
+		return temp;
 	}
 
 	public void ClearQuadtree()
@@ -195,22 +211,20 @@ public class Main : MonoBehaviour
 
 	void _DeactivatePartitioning()
 	{
-		foreach (GameObject partitionPrefab in _Partitioners)
-			Destroy(partitionPrefab);
-		_Partitioners.Clear();
 	}
 
 	public void TogglePartitionView()
 	{
 		if (!DisplayPartitions)
 		{
-			_QuadTree.ViewPartitions();
+			foreach (GameObject partitionPrefab in _Partitioners)
+				partitionPrefab.SetActive(true);
 			DisplayPartitions = true;
 		}
 		else
 		{
-			_DeletePartitioning();
-			_QuadTree.ClearPartitionDrawn();
+			foreach (GameObject partitionPrefab in _Partitioners)
+				partitionPrefab.SetActive(false);
 			DisplayPartitions = false;
 		}
 	}
