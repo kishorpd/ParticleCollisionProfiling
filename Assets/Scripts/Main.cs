@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections;
+using UnityEngine.UI;
 using System.Collections.Generic;
 
 public class Main : MonoBehaviour
@@ -16,23 +17,29 @@ public class Main : MonoBehaviour
 	public QuadTree AQuadTree;
 
 	public GameObject ParentPrefab;
+	public GameObject QuadTreeGrid;
+	public GameObject KDTreeGrid;
 	public GameObject ParticlePrefab;
 
 	public Material lineColor;
-	public bool DisplayPartitions = false;
+	 bool DisplayPartitions = false;
 
 	public Color c1 = Color.yellow;
 	public Color c2 = Color.red;
 	public int lengthOfLineRenderer = 2;
-	
-	
+
+
 	private QuadTree _QuadTree;
+	private KDTree _KDTree;
 	private List<GameObject> _Particles;
-	private List<GameObject> _Partitioners;
+	private List<GameObject> _QuadTreePartitioners;
+	private List<GameObject> _KDTreePartitioners;
 	private GameObject _ObjectBeingDragged;
 	public bool _Paint = false;
-
-	private GameObject _PartitionPrefab;
+	public bool _Grabbed = false;
+	public Text TextBox;
+	private GameObject _PartitionQuadTreePrefab;
+	private GameObject _PartitionKDTreePrefab;
 
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
@@ -49,19 +56,26 @@ public class Main : MonoBehaviour
 	void Start()
 	{
 		_Particles = new List<GameObject>();
-		_Partitioners = new List<GameObject>();
+		_QuadTreePartitioners = new List<GameObject>();
 		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
+		_KDTree = new KDTree(ParentPrefab, 172f, 172f);
 		_QuadTree.MainInstance = this;
 		_CursorMode = CursorMode.NORMAL;
-		_PartitionPrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
+		_PartitionQuadTreePrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
+		_PartitionKDTreePrefab = (GameObject)Resources.Load("Prefabs/Seperator");
+		QuadTreeGrid.SetActive(false);
+
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
 		SpawnParticleOnClick();
+		//TextBox.text = "Total Leaf Nodes:" + _QuadTree.TotalLeafNodes + 
+		//				"\n Total Partitions" + _Partitioners.Count;
+
 	}
 
 
@@ -106,16 +120,28 @@ public class Main : MonoBehaviour
 							myRay = Camera.main.ScreenPointToRay(Input.mousePosition);
 							if (Physics.Raycast(myRay, out hit))
 							{
+									if (_Grabbed)
+									{
+										//Vector3 TempPosition = Input.mousePosition;
+										//TempPosition.z = 9.2f;
+										//_ObjectBeingDragged.transform.position = Camera.main.ScreenToWorldPoint(TempPosition);
+										//_QuadTree.Insert(_ObjectBeingDragged);
+									}
+								if (Input.GetMouseButtonDown(0))
+								{
+										_ObjectBeingDragged = _QuadTree.ParticleUnderCursor(hit.point);
+										_Grabbed = true;
+								}
+								
+								//case on cursor mode
 								if (Input.GetMouseButtonUp(0))
 								{
-									TogglePartitionView();
+										_QuadTree.RemoveParticle(_ObjectBeingDragged);
+									_Particles.Remove(_ObjectBeingDragged);
+									Destroy(_ObjectBeingDragged);
+									_Grabbed = false;
 								}
-								//
-								////case on cursor mode
-								//if (Input.GetMouseButtonUp(0))
-								//{
-								//	_ObjectBeingDragged = _QuadTree.ParticleUnderCursor(hit.point);
-								//}
+								
 							}
 
 							if (Input.GetMouseButtonUp(1))
@@ -124,28 +150,20 @@ public class Main : MonoBehaviour
 								_CursorMode = CursorMode.NORMAL;
 								
 							}
-
-							if (_ObjectBeingDragged != null)
-							{ 
-								Debug.Log("Removed?:" +
-								_QuadTree.RemoveParticle(_ObjectBeingDragged)
-									);
-								_Particles.Remove(_ObjectBeingDragged);
-							}
-							
+					
 							break;
 						}
 				
 				}//switch end
 	}
 
-	public GameObject _SpawnPartitioner(int CurrentDepth, Vector3 Center)
+	public GameObject _SpawnQuadTreePartitioner(int CurrentDepth, Vector3 Center)
 	{
 		float scaleFactor = (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
 		
 
-		Transform linesVerticle = _PartitionPrefab.transform.GetChild(0);
-		Transform linesHorizontal = _PartitionPrefab.transform.GetChild(1);
+		Transform linesVerticle = _PartitionQuadTreePrefab.transform.GetChild(0);
+		Transform linesHorizontal = _PartitionQuadTreePrefab.transform.GetChild(1);
 
 
 
@@ -163,7 +181,7 @@ public class Main : MonoBehaviour
 		Center.z = 10;
 		//instantiated here
 		GameObject temp;
-		_Partitioners.Add(temp = Instantiate(_PartitionPrefab, Center, Quaternion.identity) as GameObject);
+		_QuadTreePartitioners.Add(temp = Instantiate(_PartitionQuadTreePrefab, Center, Quaternion.identity) as GameObject);
 
 		//reset data of prefab!
 		{ 
@@ -172,16 +190,17 @@ public class Main : MonoBehaviour
 			linesHorizontal.localScale = prefabScale;
 		}
 
-		if (!DisplayPartitions)
-		{
-			temp.SetActive(false);
-		}
-		else
-		{ 
-			temp.SetActive(true);
-		}
+		temp.transform.SetParent(QuadTreeGrid.transform);
 
 		Debug.Log("Split at depth:" + CurrentDepth);
+		return temp;
+	}
+
+	public GameObject _SpawnKDPartitioner(int CurrentDepth, Vector3 Center)
+	{ 
+		GameObject temp;
+		_KDTreePartitioners.Add(temp = Instantiate(_PartitionKDTreePrefab, Center, Quaternion.identity) as GameObject);
+		temp.transform.SetParent(KDTreeGrid.transform);
 		return temp;
 	}
 
@@ -204,29 +223,42 @@ public class Main : MonoBehaviour
 
 	void _DeletePartitioning()
 	{
-		foreach (GameObject partitionPrefab in _Partitioners)
+		foreach (GameObject partitionPrefab in _QuadTreePartitioners)
 			Destroy(partitionPrefab);
-		_Partitioners.Clear();
+		_QuadTreePartitioners.Clear();
+	}
+
+	void _DeactivatePartitioning()
+	{
+		foreach (GameObject partitionPrefab in _QuadTreePartitioners)
+			partitionPrefab.SetActive(true);
 	}
 
 	public void TogglePartitionView()
 	{
 		if (!DisplayPartitions)
 		{
-			foreach (GameObject partitionPrefab in _Partitioners)
-				partitionPrefab.SetActive(true);
 			DisplayPartitions = true;
+			QuadTreeGrid.SetActive(true);
+			//_QuadTree.SetPartitionVisibility(DisplayPartitions);
 		}
 		else
 		{
-			foreach (GameObject partitionPrefab in _Partitioners)
-				partitionPrefab.SetActive(false);
 			DisplayPartitions = false;
+			QuadTreeGrid.SetActive(false);
+			//_QuadTree.SetPartitionVisibility(DisplayPartitions);
 		}
 	}
 
 	public void TogglePaintMode()
 	{
 		_Paint = !_Paint;
+	}
+
+	public void DestroyObject(GameObject ObjectToBeDestroyed)
+	{
+		//_Partitioners.Remove(ObjectToBeDestroyed);
+		Destroy(ObjectToBeDestroyed);
+		Debug.Log("Why no destroy!?");
 	}
 }

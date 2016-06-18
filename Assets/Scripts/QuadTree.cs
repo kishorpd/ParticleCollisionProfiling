@@ -9,11 +9,12 @@ public class QuadTree {
 	public Vector3 Center { get; set; }
 	public Main MainInstance { get; set; }
 
-	private int _TotalLeafNodes { get; set; }
+	public int TotalLeafNodes { get; set; }
 	private int _CurrentDepth = 0;
 	public static int SMaxDepth { get; set; }
 
 	private QuadTree					_ParentNode;
+	private GameObject					_SelfPartitionPrefab = null;
 	private GameObject					_ChildNode = null;
 	private Dictionary<int, QuadTree>	_ChildNodes = new Dictionary<int, QuadTree>();
 	private bool _PartitionDrawn = false;
@@ -29,7 +30,9 @@ public class QuadTree {
 		Width = parentWidth;
 		Center = parentCenter;
 		_ParentNode = null;
-		_TotalLeafNodes = 0;
+
+		//TODO:?_________V
+		TotalLeafNodes = 0;
 	}
 
 
@@ -40,7 +43,8 @@ public class QuadTree {
 		Width = parent.Width / 2;
 		_ParentNode = parent;
 		MainInstance = parent.MainInstance;
-		_TotalLeafNodes = 0;
+		//TODO:?_________V
+		TotalLeafNodes = 0;
 	}
 
 
@@ -65,20 +69,21 @@ public class QuadTree {
 	{
 
 		int Quadrant = InQuadrant(particleObject);
-		if (_TotalLeafNodes == 0)
+		if (TotalLeafNodes == 0)
 		{
  			//insert the childnode
 			_ChildNode = particleObject;
-			++_TotalLeafNodes;
+			++TotalLeafNodes;
 			return true;
 		}
-		else if (_TotalLeafNodes == 1)
+		else if (TotalLeafNodes == 1)
 		{
 			if (_ChildNode.transform.position == particleObject.transform.position)
 			{
 				return false;
 			}
-
+		
+			//draw split always and turn its visibility off
 			DrawSplitSelf();
 
 			//set the cached child{gameobject} to corresponding child QuadTree
@@ -99,7 +104,7 @@ public class QuadTree {
 				_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
 			}
 
-			++_TotalLeafNodes;
+			++TotalLeafNodes;
 			return _ChildNodes[Quadrant].Insert(particleObject);
 		
 		}
@@ -110,14 +115,14 @@ public class QuadTree {
 				_ChildNodes[Quadrant] = new QuadTree(this);
 				_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
 			}
-			++_TotalLeafNodes;
+			++TotalLeafNodes;
 			return _ChildNodes[Quadrant].Insert(particleObject);
 		}
 	}
 
 	public void Clear()
 	{
-		if(_TotalLeafNodes != 0)
+		if(TotalLeafNodes != 0)
 		{
 			if (_ChildNode == null)
 			{
@@ -155,7 +160,17 @@ public class QuadTree {
 
 	void DrawSplitSelf()
 	{
-			MainInstance._SpawnPartitioner(_CurrentDepth, this.Center);
+		if (_SelfPartitionPrefab == null)
+		{
+			_SelfPartitionPrefab = MainInstance._SpawnQuadTreePartitioner(_CurrentDepth, this.Center);
+
+		}
+		
+		////display or not
+		//if (MainInstance.DisplayPartitions)
+		//	_SelfPartitionPrefab.SetActive(true);
+		//else
+		//	_SelfPartitionPrefab.SetActive(false);
 	}
 
 
@@ -191,7 +206,7 @@ public class QuadTree {
 	public GameObject ParticleUnderCursor(Vector3 CursorPosition)
 	{
 
-		if (_TotalLeafNodes == 0)
+		if (TotalLeafNodes == 0)
 		{
 			//no particle under cursor 
 			return null;
@@ -199,7 +214,7 @@ public class QuadTree {
 		else
 		{
 			int Quadrant = InQuadrant(CursorPosition);
-			return (_TotalLeafNodes == 1) ? _ChildNode : 
+			return (TotalLeafNodes == 1) ? _ChildNode : 
 					((_ChildNodes.ContainsKey(Quadrant)) ? 
 						_ChildNodes[Quadrant].ParticleUnderCursor(CursorPosition) : null);
 		}
@@ -225,14 +240,14 @@ public class QuadTree {
 	GameObject FindParticleObject(GameObject ParticleObject)
 	{
 
-		if (_TotalLeafNodes == 0)
+		if (TotalLeafNodes == 0)
 		{
 			return _ChildNode;
 		}
 		else
 		{
 			int Quadrant = InQuadrant(ParticleObject);
-			return (_TotalLeafNodes == 1) ? _ChildNode :
+			return (TotalLeafNodes == 1) ? _ChildNode :
 					((_ChildNodes.ContainsKey(Quadrant)) ?
 						_ChildNodes[Quadrant].FindParticleObject(ParticleObject) : null);
 		}
@@ -240,14 +255,14 @@ public class QuadTree {
 
 	QuadTree FindParticleParent(GameObject ParticleObject)
 	{
-		if (_TotalLeafNodes == 0)
+		if (TotalLeafNodes == 0)
 		{
 			return this;
 		}
 		else
 		{
 			int Quadrant = InQuadrant(ParticleObject);
-			return (_TotalLeafNodes == 1) ? this :
+			return (TotalLeafNodes == 1) ? this :
 					((_ChildNodes.ContainsKey(Quadrant)) ?
 						_ChildNodes[Quadrant].FindParticleParent(ParticleObject) : null);
 		}
@@ -255,17 +270,109 @@ public class QuadTree {
 
 	public bool RemoveParticle(GameObject ParticleObject)
 	{
-		QuadTree temp= FindParticleParent(ParticleObject);
-		if (temp != null)
+		QuadTree TempParent = FindParticleParent(ParticleObject);
+		if (TempParent != null)
 		{
-			temp._ChildNode = null;
-			--temp._TotalLeafNodes;
-			temp._PartitionDrawn = false;
+			TempParent._ChildNode = null;
+		//	if (TempParent._TotalLeafNodes == 1)
+			{ 
+				while (TempParent._ParentNode != null)
+				{ 
+					--TempParent.TotalLeafNodes;
+
+
+					if (TempParent.TotalLeafNodes == 1)
+					{
+						Debug.Log("CALLED count me now!");
+						MainInstance.DestroyObject(TempParent._SelfPartitionPrefab);
+						TempParent._SelfPartitionPrefab = null;
+						
+						//update childrens
+						for (int leaf = 0; leaf < 4; ++leaf)
+						{
+							if (TempParent._ChildNodes.ContainsKey(leaf))
+							{
+								TempParent._ChildNode = TempParent._ChildNodes[leaf]._ChildNode;
+
+								TempParent._ChildNodes[leaf]._ChildNode = null;
+								TempParent._ChildNodes[leaf].Clear();
+								TempParent._ChildNodes.Clear();
+							}
+						}
+					}
+
+					TempParent._PartitionDrawn = false;
+					TempParent = TempParent._ParentNode;
+				}
+				if (TempParent._ParentNode == null)
+					if (TempParent.TotalLeafNodes == 1)
+					{
+						--TempParent.TotalLeafNodes;
+						MainInstance.DestroyObject(TempParent._SelfPartitionPrefab);
+						TempParent._SelfPartitionPrefab = null;
+					}
+			}
+			//if (temp._TotalLeafNodes == 0)
+			//{
+			//	MainInstance.DestroyObject(temp._SelfPartitionPrefab);
+			//	temp._SelfPartitionPrefab = null;
+			//}
 			return true;
 		}
+
+		//object not found
 		return false;
 	}
 
+	public void ViewPartitions()
+	{
+		if (TotalLeafNodes > 0)
+		{
+			if (!_PartitionDrawn)
+				 DrawSplitSelf();
 
 
+			for (int leaf = 0; leaf < 4; ++leaf)
+			{
+				if (_ChildNodes.ContainsKey(leaf))
+					_ChildNodes[leaf].ViewPartitions();
+			}
+			_PartitionDrawn = true;
+		}
+	}
+
+
+	public void SetPartitionVisibility(bool Visibility)
+	{
+
+		if (TotalLeafNodes > 0)
+		{
+			for (int leaf = 0; leaf < 4; ++leaf)
+			{
+				if (_ChildNodes.ContainsKey(leaf))
+					_ChildNodes[leaf].SetPartitionVisibility(Visibility);
+			}
+
+			if (_SelfPartitionPrefab != null)
+			{
+				_SelfPartitionPrefab.SetActive(Visibility);
+				_PartitionDrawn = Visibility;
+			}
+		}
+	}
+
+	public void ClearPartitionDrawn()
+	{
+		if (TotalLeafNodes > 0)
+		{
+			if (_PartitionDrawn)
+				_PartitionDrawn = false;
+
+			for (int leaf = 0; leaf < 4; ++leaf)
+			{
+				if (_ChildNodes.ContainsKey(leaf))
+					_ChildNodes[leaf].ClearPartitionDrawn();
+			}
+		}
+	}
 }

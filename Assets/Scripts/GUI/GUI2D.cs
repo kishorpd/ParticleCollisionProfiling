@@ -1,15 +1,13 @@
 ﻿using UnityEngine;
 using System.Collections;
+using System.Collections.Generic;
 
 public class GUI2D : MonoBehaviour {
 
-	// Use this for initialization
-	void Start () {
-	
-	}
-	
-	// Update is called once per frame
-	void Update () {
-	
+	public List<SpriteRenderer> _Particles;
+
+	GUI2D()
+	{
+		_Particles = new List<SpriteRenderer>();
 	}
 }
