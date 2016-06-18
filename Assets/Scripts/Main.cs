@@ -57,11 +57,13 @@ public class Main : MonoBehaviour
 	{
 		_Particles = new List<GameObject>();
 		_QuadTreePartitioners = new List<GameObject>();
+		_KDTreePartitioners = new List<GameObject>();
 		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
 		_KDTree = new KDTree(ParentPrefab, 172f, 172f);
-		_QuadTree.MainInstance = this;
+		QuadTree.MainInstance = this;
+		KDTree.MainInstance = this;
 		_CursorMode = CursorMode.NORMAL;
 		_PartitionQuadTreePrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
 		_PartitionKDTreePrefab = (GameObject)Resources.Load("Prefabs/Seperator");
@@ -96,8 +98,16 @@ public class Main : MonoBehaviour
 									//instantiate and add in the list
 									GameObject ParticleObject;
 									_Particles.Add(ParticleObject = Instantiate(ParticlePrefab, new Vector3(hit.point.x, hit.point.y, hit.point.z), Quaternion.identity) as GameObject);
+									
 									//insert in the QuadTree
 									if (!_QuadTree.Insert(ParticleObject))
+									{
+										_Particles.Remove(ParticleObject);
+										Destroy(ParticleObject);
+									}
+							
+									//insert in the QuadTree
+									if (!_KDTree.Insert(ParticleObject))
 									{
 										_Particles.Remove(ParticleObject);
 										Destroy(ParticleObject);
@@ -192,15 +202,50 @@ public class Main : MonoBehaviour
 
 		temp.transform.SetParent(QuadTreeGrid.transform);
 
-		Debug.Log("Split at depth:" + CurrentDepth);
+	//	Debug.Log("Split at depth:" + CurrentDepth);
 		return temp;
 	}
 
-	public GameObject _SpawnKDPartitioner(int CurrentDepth, Vector3 Center)
+	public GameObject _SpawnKDTreePartitioner(float length,bool toRotate, Vector3 Center)
 	{ 
 		GameObject temp;
-		_KDTreePartitioners.Add(temp = Instantiate(_PartitionKDTreePrefab, Center, Quaternion.identity) as GameObject);
+
+		Debug.Log("length: " + length);
+		//set the scale according to the length
+
+		Vector3 scale = _PartitionKDTreePrefab.transform.localScale;
+		//Quaternion rotation = _PartitionKDTreePrefab.transform.rotation;//.localRotation;
+		Quaternion rotation = Quaternion.Euler(0, 0, 90);
+		scale.y = scale.y * (length / (172.0f));
+
+		_PartitionKDTreePrefab.transform.localScale = scale;
+
+		//if (toRotate)
+		//{
+		//	//Debug.Log("rotate" + rotation);
+		//	//rotation.z += 90;
+		//	//Debug.Log("rotate" + rotation);
+		//	Debug.Log("_PartitionKDTreePrefab.transform.localRotation " + _PartitionKDTreePrefab.transform.rotation);
+		//	_PartitionKDTreePrefab.transform.rotation = rotation;
+		//	Debug.Log("_PartitionKDTreePrefab.transform.localRotation " + _PartitionKDTreePrefab.transform.rotation);
+		//}
+		//
+
+		_KDTreePartitioners.Add(temp = Instantiate(_PartitionKDTreePrefab, Center, (toRotate)? rotation: Quaternion.identity) as GameObject);
 		temp.transform.SetParent(KDTreeGrid.transform);
+
+		scale.y = scale.y / (length / (172.0f));
+
+		//reset the scale to the original length
+		//if (toRotate)
+		//{
+		//	rotation.z -= 90;
+		//	_PartitionKDTreePrefab.transform.localRotation = rotation;
+		//}
+
+
+		_PartitionKDTreePrefab.transform.localScale = scale;
+	
 		return temp;
 	}
 
@@ -215,7 +260,8 @@ public class Main : MonoBehaviour
 
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
-		_QuadTree.MainInstance = this;
+		QuadTree.MainInstance = this;
+		KDTree.MainInstance = this;
 
 		//for restarting this level.
 		//Application.LoadLevel(0); 
@@ -255,7 +301,7 @@ public class Main : MonoBehaviour
 		_Paint = !_Paint;
 	}
 
-	public void DestroyObject(GameObject ObjectToBeDestroyed)
+	public void DestroyQuadTreeObject(GameObject ObjectToBeDestroyed)
 	{
 		//_Partitioners.Remove(ObjectToBeDestroyed);
 		Destroy(ObjectToBeDestroyed);

@@ -5,9 +5,10 @@ public class KDTree{// : MonoBehaviour {
 
 
 	KDTree _ParentNode = null;
-	KDTree	_SmallerNode = null;
-	KDTree  _GreaterNode = null;
+	KDTree	_LowerNode = null;
+	KDTree  _MajorNode = null;
 	public int TotalLeafNodes { get; set; }
+	public static Main MainInstance { get; set; }
 
 
 	Vector3 _ParentPosition;
@@ -16,7 +17,7 @@ public class KDTree{// : MonoBehaviour {
 	static GameObject _ParentPrefab;
 
 	private GameObject _ParticleObject = null;
-	private SpriteRenderer _SplitSprite = null;
+	private GameObject _SelfPartitionPrefab = null;
 
 
 	struct Max_Min
@@ -36,16 +37,18 @@ public class KDTree{// : MonoBehaviour {
 		//ParentObject:  get center and set this as the parent prefab
 
 		_ParentPrefab = parentObject;
-		_IsAlignedToXAxis = true;
+		_IsAlignedToXAxis = false;
 
 		//Width
 		_X.Max = _ParentPrefab.transform.position.x + parentWidth / 2;
-		_X.Min = -_X.Max;
+		_X.Min = _ParentPrefab.transform.position.x - parentWidth / 2;
+		//_X.Min = -_X.Max;
 
 
 		//Height
 		_Y.Max = _ParentPrefab.transform.position.y + parentHeight / 2;
-		_Y.Min = -_Y.Max;
+		_Y.Min = _ParentPrefab.transform.position.y - parentHeight / 2;
+		//_Y.Min = -_Y.Max;
 
 		//
 		TotalLeafNodes = 1;
@@ -53,9 +56,30 @@ public class KDTree{// : MonoBehaviour {
 	}
 
 
-	//KDTree(GameObject particleObject, float parentHeight, float parentWidth)
-	//{ 
-	//}
+	KDTree(KDTree parent, float min, float max)
+	{
+		_IsAlignedToXAxis = !parent._IsAlignedToXAxis;
+
+		if (_IsAlignedToXAxis)
+		{
+			//Width
+			_X.Max = max;
+			_X.Min = min;
+			_Y = parent._Y;
+		}
+		else 
+		{
+			//Height
+			_Y.Max = max;
+			_Y.Min = min;
+			_X = parent._X;
+		}
+
+
+		//
+		++TotalLeafNodes;
+
+	}
 
 
 	public bool Insert(GameObject particleObject)
@@ -63,39 +87,79 @@ public class KDTree{// : MonoBehaviour {
 		if (_ParticleObject == null)
 		{
 			_ParticleObject = particleObject;
-			_IsAlignedToXAxis = !_ParentNode._IsAlignedToXAxis;
+			DrawSplitSelf();
 			TotalLeafNodes++;
 
 
+
+			if (_IsAlignedToXAxis)
+			{
+				//set the min and max of the 
+				float splitAt = particleObject.transform.position.y;
+				_LowerNode = new KDTree(this, _Y.Min, splitAt);
+				_MajorNode = new KDTree(this, splitAt, _Y.Max);
+			}
+			else
+			{
+				float splitAt = particleObject.transform.position.x;
+				_LowerNode = new KDTree(this, _X.Min, splitAt);
+				_MajorNode = new KDTree(this, splitAt, _X.Max);
+			}
+		
 			return true;
 		}
 		else 
 		{
+			//TODO: look if there is a possibility of optimizing this
 			if (_IsAlignedToXAxis)
 			{
-				//set the min and max of the 
-
+				if (particleObject.transform.position.y < _ParticleObject.transform.position.y)
+				{
+					//set the min and max of the 
+					_LowerNode.Insert(particleObject);
+				}
+				else
+				{
+					_MajorNode.Insert(particleObject);
+				}
 			}
 			else
-			{ 
+			{
+				if (particleObject.transform.position.x < _ParticleObject.transform.position.x)
+				{
+					//set the min and max of the 
+					_LowerNode.Insert(particleObject);
+				}
+				else
+				{
+					_MajorNode.Insert(particleObject);
+				}
 			}
-		}
 
+		}
 		return true;
 	}
 
-	void AddSprite()
+	void DrawSplitSelf()
 	{
-		GUI2D _spritesParent =  _ParentPrefab.AddComponent<GUI2D>();
+		if (_SelfPartitionPrefab == null)
+		{
+			Vector2 tempPosition = _ParticleObject.transform.position;
+			float length = 0.0f;
+			if (_IsAlignedToXAxis)
+			{
+				length =  _X.Max - _X.Min;
+				tempPosition.x = _X.Min + (length / 2);
+			}
+			else
+			{
+				length = _Y.Max - _Y.Min;
+				tempPosition.y =  _Y.Min + (length / 2);
+			}
+			_SelfPartitionPrefab = MainInstance._SpawnKDTreePartitioner(Mathf.Abs(length), _IsAlignedToXAxis, tempPosition);
 
-		Renderer rend = _spritesParent.GetComponent<Renderer>();
-		rend.material.mainTexture = Resources.Load("Art/LineOnly") as Texture;
-
-		//SpriteRenderer temp  = new SpriteRenderer();
-		////_SplitSprite =  _ParentPrefab.AddComponent<SpriteRenderer>();
-		//temp.material.mainTexture = Resources.Load("Art/LineOnly") as Texture;
-		//_spritesParent._Particles.Add(temp);
-		Debug.Log("KD____________________________________TREEEEEEEEEEEEEEEE");
+		}
+		Debug.Log("KD____________INSERT________________________TREEEEEEEEEEEEEEEE");
 	}
 
 }
