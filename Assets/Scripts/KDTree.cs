@@ -42,13 +42,10 @@ public class KDTree{// : MonoBehaviour {
 		//Width
 		_X.Max = _ParentPrefab.transform.position.x + parentWidth / 2;
 		_X.Min = _ParentPrefab.transform.position.x - parentWidth / 2;
-		//_X.Min = -_X.Max;
-
-
+	
 		//Height
 		_Y.Max = _ParentPrefab.transform.position.y + parentHeight / 2;
 		_Y.Min = _ParentPrefab.transform.position.y - parentHeight / 2;
-		//_Y.Min = -_Y.Max;
 
 		//
 		TotalLeafNodes = 1;
@@ -159,7 +156,25 @@ public class KDTree{// : MonoBehaviour {
 			_SelfPartitionPrefab = MainInstance._SpawnKDTreePartitioner(Mathf.Abs(length), _IsAlignedToXAxis, tempPosition);
 
 		}
-		Debug.Log("KD____________INSERT________________________TREEEEEEEEEEEEEEEE");
 	}
 
+	public void Clear()
+	{
+		if (_LowerNode != null)
+			_LowerNode.Clear();
+		if (_MajorNode != null)
+			_MajorNode.Clear();
+
+		_LowerNode = null;
+		_MajorNode = null;
+		_ParticleObject = null;
+		MainInstance.DestroyQuadTreeObject(_SelfPartitionPrefab);
+		_SelfPartitionPrefab = null;
+		_ParentNode = null;
+	}
+
+	public void ClearStaticData()
+	{
+		_MaxDepth = 0;
+	}
 }

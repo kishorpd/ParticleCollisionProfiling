@@ -22,7 +22,8 @@ public class Main : MonoBehaviour
 	public GameObject ParticlePrefab;
 
 	public Material lineColor;
-	 bool DisplayPartitions = false;
+	bool DisplayQuadPartitions = false;
+	bool DisplayKDPartitions = false;
 
 	public Color c1 = Color.yellow;
 	public Color c2 = Color.red;
@@ -68,6 +69,7 @@ public class Main : MonoBehaviour
 		_PartitionQuadTreePrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
 		_PartitionKDTreePrefab = (GameObject)Resources.Load("Prefabs/Seperator");
 		QuadTreeGrid.SetActive(false);
+		KDTreeGrid.SetActive(false);
 
 	}
 
@@ -220,29 +222,11 @@ public class Main : MonoBehaviour
 
 		_PartitionKDTreePrefab.transform.localScale = scale;
 
-		//if (toRotate)
-		//{
-		//	//Debug.Log("rotate" + rotation);
-		//	//rotation.z += 90;
-		//	//Debug.Log("rotate" + rotation);
-		//	Debug.Log("_PartitionKDTreePrefab.transform.localRotation " + _PartitionKDTreePrefab.transform.rotation);
-		//	_PartitionKDTreePrefab.transform.rotation = rotation;
-		//	Debug.Log("_PartitionKDTreePrefab.transform.localRotation " + _PartitionKDTreePrefab.transform.rotation);
-		//}
-		//
-
 		_KDTreePartitioners.Add(temp = Instantiate(_PartitionKDTreePrefab, Center, (toRotate)? rotation: Quaternion.identity) as GameObject);
 		temp.transform.SetParent(KDTreeGrid.transform);
 
+		//rescale the prefab to original size
 		scale.y = scale.y / (length / (172.0f));
-
-		//reset the scale to the original length
-		//if (toRotate)
-		//{
-		//	rotation.z -= 90;
-		//	_PartitionKDTreePrefab.transform.localRotation = rotation;
-		//}
-
 
 		_PartitionKDTreePrefab.transform.localScale = scale;
 	
@@ -253,6 +237,7 @@ public class Main : MonoBehaviour
 	{
 		_DeletePartitioning();
 		_QuadTree.Clear();
+		_KDTree.Clear();
 
 		foreach (GameObject particlePrefab in _Particles)
 			Destroy(particlePrefab);
@@ -282,17 +267,31 @@ public class Main : MonoBehaviour
 
 	public void TogglePartitionView()
 	{
-		if (!DisplayPartitions)
+		if (!DisplayQuadPartitions)
 		{
-			DisplayPartitions = true;
+			DisplayQuadPartitions = true;
 			QuadTreeGrid.SetActive(true);
 			//_QuadTree.SetPartitionVisibility(DisplayPartitions);
 		}
 		else
 		{
-			DisplayPartitions = false;
+			DisplayQuadPartitions = false;
 			QuadTreeGrid.SetActive(false);
 			//_QuadTree.SetPartitionVisibility(DisplayPartitions);
+		}
+	}
+
+	public void ToggleKDTreeDisplay()
+	{
+		if (!DisplayKDPartitions)
+		{
+			DisplayKDPartitions = true;
+			KDTreeGrid.SetActive(true);
+		}
+		else
+		{
+			DisplayKDPartitions = false;
+			KDTreeGrid.SetActive(false);
 		}
 	}
 
@@ -305,6 +304,5 @@ public class Main : MonoBehaviour
 	{
 		//_Partitioners.Remove(ObjectToBeDestroyed);
 		Destroy(ObjectToBeDestroyed);
-		Debug.Log("Why no destroy!?");
 	}
 }
