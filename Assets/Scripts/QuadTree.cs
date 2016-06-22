@@ -7,7 +7,7 @@ public class QuadTree {
 	public float Height { get; set; }
 	public float Width { get; set; }
 	public Vector3 Center { get; set; }
-	public static Main MainInstance { get; set; }
+	public static Main SMainInstance { get; set; }
 
 	public int TotalLeafNodes { get; set; }
 	private int _CurrentDepth = 0;
@@ -31,7 +31,6 @@ public class QuadTree {
 		Center = parentCenter;
 		_ParentNode = null;
 
-		//TODO:?_________V
 		TotalLeafNodes = 0;
 	}
 
@@ -42,8 +41,6 @@ public class QuadTree {
 		Height = parent.Height / 2;
 		Width = parent.Width / 2;
 		_ParentNode = parent;
-		//TODO:?_________V
-		TotalLeafNodes = 0;
 	}
 
 
@@ -161,15 +158,9 @@ public class QuadTree {
 	{
 		if (_SelfPartitionPrefab == null)
 		{
-			_SelfPartitionPrefab = MainInstance._SpawnQuadTreePartitioner(_CurrentDepth, this.Center);
+			_SelfPartitionPrefab = SMainInstance._SpawnQuadTreePartitioner(_CurrentDepth, this.Center);
 
 		}
-		
-		////display or not
-		//if (MainInstance.DisplayPartitions)
-		//	_SelfPartitionPrefab.SetActive(true);
-		//else
-		//	_SelfPartitionPrefab.SetActive(false);
 	}
 
 
@@ -283,7 +274,7 @@ public class QuadTree {
 					if (TempParent.TotalLeafNodes == 1)
 					{
 						Debug.Log("CALLED count me now!");
-						MainInstance.DestroyQuadTreeObject(TempParent._SelfPartitionPrefab);
+						SMainInstance.DestroyQuadTreeObject(TempParent._SelfPartitionPrefab);
 						TempParent._SelfPartitionPrefab = null;
 						
 						//update childrens
@@ -307,7 +298,7 @@ public class QuadTree {
 					if (TempParent.TotalLeafNodes == 1)
 					{
 						--TempParent.TotalLeafNodes;
-						MainInstance.DestroyQuadTreeObject(TempParent._SelfPartitionPrefab);
+						SMainInstance.DestroyQuadTreeObject(TempParent._SelfPartitionPrefab);
 						TempParent._SelfPartitionPrefab = null;
 					}
 			}

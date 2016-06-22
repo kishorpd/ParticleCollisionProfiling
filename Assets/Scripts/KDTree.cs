@@ -1,20 +1,20 @@
 ﻿using UnityEngine;
 using System.Collections;
 
-public class KDTree{// : MonoBehaviour {
+public class KDTree{
 
 
-	KDTree _ParentNode = null;
-	KDTree	_LowerNode = null;
-	KDTree  _MajorNode = null;
+	private KDTree	_ParentNode = null;
+	private KDTree	_LowerNode = null;
+	private KDTree  _MajorNode = null;
 	public int TotalLeafNodes { get; set; }
-	public static Main MainInstance { get; set; }
+	public static Main SMainInstance { get; set; }
 
 
 	Vector3 _ParentPosition;
 	bool _IsAlignedToXAxis;
-	static int _MaxDepth;
-	static GameObject _ParentPrefab;
+	static int _SMaxDepth;
+	static GameObject _SParentPrefab;
 
 	private GameObject _ParticleObject = null;
 	private GameObject _SelfPartitionPrefab = null;
@@ -27,25 +27,24 @@ public class KDTree{// : MonoBehaviour {
 	};
 
 
-	Max_Min _X;
-	Max_Min _Y;
+	private Max_Min _X;
+	private Max_Min _Y;
 
 	public KDTree(GameObject parentObject, float parentHeight, float parentWidth)
 	{
 		//this has to be the main parent node of the whole KDTree
 
 		//ParentObject:  get center and set this as the parent prefab
-
-		_ParentPrefab = parentObject;
+		_SParentPrefab = parentObject;
 		_IsAlignedToXAxis = false;
 
 		//Width
-		_X.Max = _ParentPrefab.transform.position.x + parentWidth / 2;
-		_X.Min = _ParentPrefab.transform.position.x - parentWidth / 2;
+		_X.Max = _SParentPrefab.transform.position.x + parentWidth / 2;
+		_X.Min = _SParentPrefab.transform.position.x - parentWidth / 2;
 	
 		//Height
-		_Y.Max = _ParentPrefab.transform.position.y + parentHeight / 2;
-		_Y.Min = _ParentPrefab.transform.position.y - parentHeight / 2;
+		_Y.Max = _SParentPrefab.transform.position.y + parentHeight / 2;
+		_Y.Min = _SParentPrefab.transform.position.y - parentHeight / 2;
 
 		//
 		TotalLeafNodes = 1;
@@ -153,7 +152,7 @@ public class KDTree{// : MonoBehaviour {
 				length = _Y.Max - _Y.Min;
 				tempPosition.y =  _Y.Min + (length / 2);
 			}
-			_SelfPartitionPrefab = MainInstance._SpawnKDTreePartitioner(Mathf.Abs(length), _IsAlignedToXAxis, tempPosition);
+			_SelfPartitionPrefab = SMainInstance._SpawnKDTreePartitioner(Mathf.Abs(length), _IsAlignedToXAxis, tempPosition);
 
 		}
 	}
@@ -168,13 +167,13 @@ public class KDTree{// : MonoBehaviour {
 		_LowerNode = null;
 		_MajorNode = null;
 		_ParticleObject = null;
-		MainInstance.DestroyQuadTreeObject(_SelfPartitionPrefab);
+		SMainInstance.DestroyQuadTreeObject(_SelfPartitionPrefab);
 		_SelfPartitionPrefab = null;
 		_ParentNode = null;
 	}
 
 	public void ClearStaticData()
 	{
-		_MaxDepth = 0;
+		_SMaxDepth = 0;
 	}
 }

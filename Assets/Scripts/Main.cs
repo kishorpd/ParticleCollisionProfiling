@@ -5,15 +5,7 @@ using System.Collections.Generic;
 
 public class Main : MonoBehaviour
 {
-
-	public float lineWidth = 1.5f;
-	public float BorderOffsetX = 15f;
-	public float BorderOffsetY = 15f;
-	public float BorderWidth = 120f;
-	public float BorderHeight = 95f;
-	Vector3 StartPoint = new Vector3(-31, 22, 0);
-	Vector3 EndPoint = new Vector3(-31, -22, 0);
-
+	
 	public QuadTree AQuadTree;
 
 	public GameObject ParentPrefab;
@@ -24,10 +16,12 @@ public class Main : MonoBehaviour
 	public Material lineColor;
 	bool DisplayQuadPartitions = false;
 	bool DisplayKDPartitions = false;
+	public float BoundaryScale = 172.0f;
 
 	public Color c1 = Color.yellow;
 	public Color c2 = Color.red;
 	public int lengthOfLineRenderer = 2;
+	public Text TextBox;
 
 
 	private QuadTree _QuadTree;
@@ -36,9 +30,8 @@ public class Main : MonoBehaviour
 	private List<GameObject> _QuadTreePartitioners;
 	private List<GameObject> _KDTreePartitioners;
 	private GameObject _ObjectBeingDragged;
-	public bool _Paint = false;
-	public bool _Grabbed = false;
-	public Text TextBox;
+	private bool _Paint = false;
+	private bool _Grabbed = false;
 	private GameObject _PartitionQuadTreePrefab;
 	private GameObject _PartitionKDTreePrefab;
 
@@ -53,6 +46,7 @@ public class Main : MonoBehaviour
 
 	CursorMode _CursorMode = CursorMode.NORMAL;
 
+
 	// Use this for initialization
 	void Start()
 	{
@@ -63,8 +57,8 @@ public class Main : MonoBehaviour
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
 		_KDTree = new KDTree(ParentPrefab, 172f, 172f);
-		QuadTree.MainInstance = this;
-		KDTree.MainInstance = this;
+		QuadTree.SMainInstance = this;
+		KDTree.SMainInstance = this;
 		_CursorMode = CursorMode.NORMAL;
 		_PartitionQuadTreePrefab = (GameObject)Resources.Load("Prefabs/QuadSeperator");
 		_PartitionKDTreePrefab = (GameObject)Resources.Load("Prefabs/Seperator");
@@ -218,7 +212,7 @@ public class Main : MonoBehaviour
 		Vector3 scale = _PartitionKDTreePrefab.transform.localScale;
 		//Quaternion rotation = _PartitionKDTreePrefab.transform.rotation;//.localRotation;
 		Quaternion rotation = Quaternion.Euler(0, 0, 90);
-		scale.y = scale.y * (length / (172.0f));
+		scale.y = scale.y * (length / (BoundaryScale));
 
 		_PartitionKDTreePrefab.transform.localScale = scale;
 
@@ -226,7 +220,7 @@ public class Main : MonoBehaviour
 		temp.transform.SetParent(KDTreeGrid.transform);
 
 		//rescale the prefab to original size
-		scale.y = scale.y / (length / (172.0f));
+		scale.y = scale.y / (length / (BoundaryScale));
 
 		_PartitionKDTreePrefab.transform.localScale = scale;
 	
@@ -245,8 +239,8 @@ public class Main : MonoBehaviour
 
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
 		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
-		QuadTree.MainInstance = this;
-		KDTree.MainInstance = this;
+		QuadTree.SMainInstance = this;
+		KDTree.SMainInstance = this;
 
 		//for restarting this level.
 		//Application.LoadLevel(0); 
