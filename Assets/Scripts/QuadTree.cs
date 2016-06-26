@@ -16,8 +16,9 @@ public class QuadTree {
 	private QuadTree					_ParentNode;
 	private GameObject					_SelfPartitionPrefab = null;
 	private GameObject					_ChildNode = null;
+	static private GameObject			_SPreviousChildNode = null;
 	private Dictionary<int, QuadTree>	_ChildNodes = new Dictionary<int, QuadTree>();
-	private bool _PartitionDrawn = false;
+	private bool						_PartitionDrawn = false;
 
 #if DEBUG
 	private int __SelfQuadrant = 0;
@@ -53,7 +54,6 @@ public class QuadTree {
 	public void SetConstructor(QuadTree parent, Vector3 parentCenter)
 	{
 		_CurrentDepth = parent._CurrentDepth + 1;
-		Debug.Log("Depth:" + _CurrentDepth);
 
 		Height = parent.Height * 0.5f;
 		Width = parent.Width * 0.5f;
@@ -74,35 +74,49 @@ public class QuadTree {
 		}
 		else if (TotalLeafNodes == 1)
 		{
-			if (_ChildNode.transform.position == particleObject.transform.position)
+
+			if (_ChildNode != null)
 			{
-				return false;
+				Debug.Log("SKIPPED THE BUG!!");
+				if (_ChildNode.transform.position == particleObject.transform.position)
+				{
+					return false;
+				}
+				//draw split always and turn its visibility off
+				DrawSplitSelf();
+				//set the cached child{gameobject} to corresponding child QuadTree
+				int tempQuadrant = InQuadrant(_ChildNode);
+				_ChildNodes[tempQuadrant] = new QuadTree(this);
+				_ChildNodes[tempQuadrant].SetCenter(GetCenterOfQuadrant(tempQuadrant));
+				//not returning anything from this one because we are in middle of partitioning
+				_ChildNodes[tempQuadrant].Insert(_ChildNode);
+
+				//clear the cached childNode
+				_ChildNode = null;
+
+				//set the parameter in respective child QuadTree
+				if (tempQuadrant != Quadrant)
+				{
+					_ChildNodes[Quadrant] = new QuadTree(this);
+					_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
+				}
+
 			}
-		
-			//draw split always and turn its visibility off
-			DrawSplitSelf();
-
-			//set the cached child{gameobject} to corresponding child QuadTree
-			int tempQuadrant = InQuadrant(_ChildNode);
-			_ChildNodes[tempQuadrant] = new QuadTree(this);
-			_ChildNodes[tempQuadrant].SetCenter(GetCenterOfQuadrant(tempQuadrant));
-			//not returning anything from this one because we are in middle of partitioning
-			_ChildNodes[tempQuadrant].Insert(_ChildNode);
-
-			//clear the cached childNode
-			_ChildNode = null;
-
-			Debug.Log("tempQuadrant = " + tempQuadrant + "Quadrant = " + Quadrant);
-			//set the parameter in respective child QuadTree
-			if (tempQuadrant != Quadrant)
-			{ 
-				_ChildNodes[Quadrant] = new QuadTree(this);
-				_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
+			else
+			{
+ 				//find the quadrant for particle insert in the quadrant
+				//int tempQuadrant = InQuadrant(particleObject);
+				if (_ChildNodes.ContainsKey(Quadrant))
+					throw new System.InvalidOperationException("uh ohhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhhh");
+				//if (tempQuadrant != Quadrant)
+				{ 
+					_ChildNodes[Quadrant] = new QuadTree(this);
+					_ChildNodes[Quadrant].SetCenter(GetCenterOfQuadrant(Quadrant));
+				}
+			
 			}
-
-			++TotalLeafNodes;
-			return _ChildNodes[Quadrant].Insert(particleObject);
-		
+				++TotalLeafNodes;
+				return _ChildNodes[Quadrant].Insert(particleObject);
 		}
 		else
 		{
@@ -127,6 +141,7 @@ public class QuadTree {
 					if (_ChildNodes.ContainsKey(leaf))
 					{
 						_ChildNodes[leaf].Clear();
+						SMainInstance.DestroyQuadTreeObject(_SelfPartitionPrefab);
 					}
 				}
 			}
@@ -134,6 +149,16 @@ public class QuadTree {
 			{
 				_ChildNode = null;
 			}
+			TotalLeafNodes = 0;
+			_CurrentDepth = 0;
+			SMaxDepth = 0;
+
+			_ParentNode = null;
+			_SelfPartitionPrefab = null;
+			_ChildNode = null;
+			_SPreviousChildNode = null;
+			_ChildNodes = new Dictionary<int, QuadTree>();
+			_PartitionDrawn = false;
 		}
 	}
 
@@ -204,7 +229,7 @@ public class QuadTree {
 		else
 		{
 			int Quadrant = InQuadrant(CursorPosition);
-			return (TotalLeafNodes == 1) ? _ChildNode : 
+			return (TotalLeafNodes == 1) ?( (ParticleUnderCursor(_ChildNode, CursorPosition))? _ChildNode : null): 
 					((_ChildNodes.ContainsKey(Quadrant)) ? 
 						_ChildNodes[Quadrant].ParticleUnderCursor(CursorPosition) : null);
 		}
@@ -213,18 +238,20 @@ public class QuadTree {
 
 	bool ParticleUnderCursor(GameObject particle,Vector3 CursorPosition)
 	{
-		float Radius = particle.transform.localScale.y;
-		return IsWithinRadius2D(CursorPosition, Radius);
+		float Radius = particle.GetComponent<SpriteRenderer>().bounds.extents.x;
+		return IsWithinCircle2D(particle.transform.localPosition, CursorPosition, Radius);
 	}
 
-	bool IsWithinRadius2D(Vector3 position, float Radius)
+	bool IsWithinCircle2D(Vector3 centerOfCircle, Vector3 point, float radiusOfCircle)
 	{
-		return (Radius * Radius == ((position.x * position.x) + (position.y * position.y)));
+
+		return (((centerOfCircle.x - point.x) * (centerOfCircle.x - point.x) + ((centerOfCircle.y - point.y) * (centerOfCircle.y - point.y))) < radiusOfCircle * radiusOfCircle);
 	}
 
-	bool IsWithinRadius3D(Vector3 position, float Radius)
+	bool IsWithinCircle3D(Vector3 centerOfCircle, Vector3 point, float radiusOfCircle)
 	{
-		return (Radius * Radius == ((position.x * position.x) + (position.y * position.y) + (position.z * position.z)));
+
+		return (((centerOfCircle.x - point.x) * (centerOfCircle.x - point.x) + ((centerOfCircle.y - point.y) * (centerOfCircle.y - point.y)) + ((centerOfCircle.z - point.z) * (centerOfCircle.z - point.z))) < radiusOfCircle * radiusOfCircle * radiusOfCircle);
 	}
 
 	GameObject FindParticleObject(GameObject ParticleObject)
@@ -252,10 +279,183 @@ public class QuadTree {
 		else
 		{
 			int Quadrant = InQuadrant(ParticleObject);
+			Debug.Log("FindParticleParent(obj) is in Quadrant:" + Quadrant);
 			return (TotalLeafNodes == 1) ? this :
 					((_ChildNodes.ContainsKey(Quadrant)) ?
 						_ChildNodes[Quadrant].FindParticleParent(ParticleObject) : null);
 		}
+	}
+
+
+	public bool RemoveFromRoot(GameObject ParticleObject)
+	{
+
+		//for root node
+		if (TotalLeafNodes == 1)
+		{
+			SMainInstance.ClearQuadtree();
+			return true;
+		}
+
+			//remove this child 
+			//QuadTree deleteChildOfParent = TempParent._ParentNode;
+			_ChildNode = null;
+			_ChildNodes.Remove(InQuadrant(ParticleObject));
+			--TotalLeafNodes;
+
+			//handle last two childrens condition
+			if (TotalLeafNodes == 1)
+			{
+				ClearPartitionDrawn();
+				for (int leaf = 0; leaf < 4; ++leaf)
+				{
+					if (_ChildNodes.ContainsKey(leaf))
+					{
+						_ChildNode = _ChildNodes[leaf]._ChildNode;
+						_ChildNodes.Clear();
+						return true;
+					}
+				}
+			}
+
+		return true;
+
+
+	}
+	
+		
+	public bool Remove(GameObject particleObject)
+	{
+		if (TotalLeafNodes == 0)
+			return false;
+
+		//handle the root node
+		QuadTree TempParent = FindParticleParent(particleObject);
+		if (TempParent == null)
+			return false;
+
+		//handle the root node
+		if ((TempParent._CurrentDepth == 0) || (TempParent._ParentNode._CurrentDepth == 0))
+		{
+			RemoveFromRoot(particleObject);
+			return true;
+		}
+
+		//now there will be only one root node condition to handle after this
+		QuadTree TempParent1 = TempParent;
+		QuadTree parentOfChildToBeDelete = TempParent._ParentNode;
+		int FoundInQuadrant = -1;
+		GameObject TempParticle = null;
+
+		//
+		{
+			//store the quadrant in which the particle is
+			FoundInQuadrant = TempParent._ParentNode.InQuadrant(particleObject);
+			//remove this child 
+			TempParent._ChildNode = null;
+			parentOfChildToBeDelete._ChildNodes.Remove(FoundInQuadrant);
+
+
+			// decrement all the TotalLeafNodes up in tree
+			while (TempParent1._ParentNode != null)
+			{
+				Debug.Log("--TempParent1.TotalLeafNodes:" + --TempParent1.TotalLeafNodes);
+				TempParent1 = TempParent1._ParentNode;
+			}
+			//decrement the TotalLeafNodes of parent
+			--TotalLeafNodes;
+
+
+
+			TempParent = parentOfChildToBeDelete;
+			//if (TempParent._ParentNode != null)
+			{ 
+				TempParent1 = TempParent;//._ParentNode;
+
+				//handle the condition for second child
+				//store the second particle in tempParticle
+				if (TempParent1.TotalLeafNodes == 1)
+				{
+					for (int leaf = 0; leaf < 4; ++leaf)
+					{
+						if (leaf == FoundInQuadrant) continue;
+
+						if (TempParent1._ChildNodes.ContainsKey(leaf))
+						{
+							TempParticle = TempParent1._ChildNodes[leaf]._ChildNode;
+							if (TempParticle != null)
+							{
+								break;
+							}
+						}
+					}
+
+
+					//TempParticle should not be null
+					if (TempParticle != null)
+					{ 
+						while ((TempParent1.TotalLeafNodes == 1) )
+						{
+							Debug.Log("^ depth: " + _CurrentDepth);
+							//handle the root condition
+							if (TempParent1._ParentNode == null)
+							{
+								SMainInstance.tempRef = TempParticle;
+								SMainInstance.ClearAndInsertQuadtree();
+								return true;
+							}
+							TempParent1 = TempParent1._ParentNode;
+						}
+
+						//now tempParent has more than one leaf nodes
+						//one in the same quadrant as tempParticle and other in remaining quadrant
+						FoundInQuadrant = TempParent1.InQuadrant(TempParticle);
+						Debug.Log("FoundInQuadrant:" + FoundInQuadrant);
+						Debug.Log("TotalLeafNodes:" + TempParent1.TotalLeafNodes);
+						TempParent1._ChildNodes[FoundInQuadrant].Clear();
+						TempParent1._ChildNodes.Remove(FoundInQuadrant);
+
+
+						//if there are only two children in tempParent1 then we will again have to fix that for insertion
+						if (TempParent1.TotalLeafNodes == 2)
+						{
+							Debug.Assert((TempParent1._ChildNode == null), "CHILD FOR INSERTION NOT NULLL!!!!");
+							for (int leaf = 0; leaf < 4; ++leaf)
+							{
+								if (leaf == FoundInQuadrant) continue;
+
+								if (TempParent1._ChildNodes.ContainsKey(leaf))
+								{
+									TempParent1._ChildNode = TempParent1._ChildNodes[leaf]._ChildNode;
+									if (TempParent1._ChildNode != null)
+									{
+										Debug.Log("1234 THIS WAS A MAJOR BUG1!");
+										TempParent1._ChildNodes.Clear();
+										break;
+									}
+								}
+							}
+						}
+						//TempParent = TempParent1;
+
+						//while (TempParent._ParentNode != TempParent1)
+						//{
+						//	Debug.Log("--TempParent1.TotalLeafNodes:" + TempParent.TotalLeafNodes--);
+						//	TempParent = TempParent._ParentNode;
+						//}
+
+						--TempParent1.TotalLeafNodes;
+						TempParent1.Insert(TempParticle);
+
+						return true;
+					}
+					else
+						throw new System.InvalidOperationException("CHILD FOUND NULLLLL!!!!!!");
+				}
+			}
+		}
+
+		return false;
 	}
 
 	public bool RemoveParticle(GameObject ParticleObject)
@@ -273,7 +473,6 @@ public class QuadTree {
 
 					if (TempParent.TotalLeafNodes == 1)
 					{
-						Debug.Log("CALLED count me now!");
 						SMainInstance.DestroyQuadTreeObject(TempParent._SelfPartitionPrefab);
 						TempParent._SelfPartitionPrefab = null;
 						
@@ -351,18 +550,55 @@ public class QuadTree {
 		}
 	}
 
-	public void ClearPartitionDrawn()
-	{
-		if (TotalLeafNodes > 0)
-		{
-			if (_PartitionDrawn)
-				_PartitionDrawn = false;
 
-			for (int leaf = 0; leaf < 4; ++leaf)
+	public void CollidesWith(GameObject particle)
+	{
+		if (_SPreviousChildNode != null)
+		{
+ 			//clear the previously highlighted 
+		Debug.Log("Started to delete highlight");
+		HighlightChildren(_SPreviousChildNode, false);
+		}
+
+
+		_SPreviousChildNode = particle; 
+		HighlightChildren(particle, true);
+	}
+
+	void HighlightChildren(GameObject particle, bool toHighlight)
+	{
+		QuadTree tempQuadTree = FindParticleParent(particle);
+		tempQuadTree = tempQuadTree._ParentNode;
+		for (int leaf = 0; leaf < 4; ++leaf)
+		{
+			if (tempQuadTree._ChildNodes.ContainsKey(leaf))
 			{
-				if (_ChildNodes.ContainsKey(leaf))
-					_ChildNodes[leaf].ClearPartitionDrawn();
+				if (tempQuadTree._ChildNodes[leaf]._ChildNode != null)
+				{
+					if (toHighlight)
+						tempQuadTree._ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.green;
+					else
+					{
+						tempQuadTree._ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.blue;
+					}
+				}
 			}
 		}
+	}
+
+	public void ClearPartitionDrawn()
+	{
+			SMainInstance.DestroyQuadTreeObject(_SelfPartitionPrefab);
+//		Debug.Log("DEL8888888888888888888888888888888888888888888888888888888");
+//		if (TotalLeafNodes > 0)
+//		{
+//			if (_PartitionDrawn)
+//				_PartitionDrawn = false;
+//			for (int leaf = 0; leaf < 4; ++leaf)
+//			{
+//				if (_ChildNodes.ContainsKey(leaf))
+//					_ChildNodes[leaf].ClearPartitionDrawn();
+//			}
+//		}
 	}
 }

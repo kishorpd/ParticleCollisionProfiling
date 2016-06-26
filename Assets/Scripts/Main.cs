@@ -24,8 +24,8 @@ public class Main : MonoBehaviour
 	public Text TextBox;
 
 
-	private QuadTree _QuadTree;
-	private KDTree _KDTree;
+	public QuadTree RootQuadTree;
+	public KDTree RootKDTree;
 	private List<GameObject> _Particles;
 	private List<GameObject> _QuadTreePartitioners;
 	private List<GameObject> _KDTreePartitioners;
@@ -34,6 +34,7 @@ public class Main : MonoBehaviour
 	private bool _Grabbed = false;
 	private GameObject _PartitionQuadTreePrefab;
 	private GameObject _PartitionKDTreePrefab;
+	public 	GameObject tempRef = null;
 
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
@@ -55,8 +56,8 @@ public class Main : MonoBehaviour
 		_KDTreePartitioners = new List<GameObject>();
 		ParentPrefab = Instantiate(ParentPrefab, new Vector3(-30, 0, 9), Quaternion.identity) as GameObject;
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
-		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
-		_KDTree = new KDTree(ParentPrefab, 172f, 172f);
+		RootQuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
+		RootKDTree = new KDTree(ParentPrefab, 172f, 172f);
 		QuadTree.SMainInstance = this;
 		KDTree.SMainInstance = this;
 		_CursorMode = CursorMode.NORMAL;
@@ -96,14 +97,14 @@ public class Main : MonoBehaviour
 									_Particles.Add(ParticleObject = Instantiate(ParticlePrefab, new Vector3(hit.point.x, hit.point.y, hit.point.z), Quaternion.identity) as GameObject);
 									
 									//insert in the QuadTree
-									if (!_QuadTree.Insert(ParticleObject))
+									if (!RootQuadTree.Insert(ParticleObject))
 									{
 										_Particles.Remove(ParticleObject);
 										Destroy(ParticleObject);
 									}
 							
 									//insert in the QuadTree
-									if (!_KDTree.Insert(ParticleObject))
+									if (!RootKDTree.Insert(ParticleObject))
 									{
 										_Particles.Remove(ParticleObject);
 										Destroy(ParticleObject);
@@ -115,6 +116,7 @@ public class Main : MonoBehaviour
 									//ClearQuadtree();
 									//_QuadTree.ParticleUnderCursor(hit.point);
 									// 
+									Debug.Log("CHANGEDS!!!!");
 									_CursorMode = CursorMode.DRAGGING;
 								}
 							}
@@ -135,17 +137,33 @@ public class Main : MonoBehaviour
 									}
 								if (Input.GetMouseButtonDown(0))
 								{
-										_ObjectBeingDragged = _QuadTree.ParticleUnderCursor(hit.point);
+										_ObjectBeingDragged = RootQuadTree.ParticleUnderCursor(hit.point);
+										//Debug.Log("R _ObjectBeingDragged.transform.localScale: " + _ObjectBeingDragged.GetComponent<SpriteRenderer>().bounds.extents.x);
+										//Debug.Log("_ObjectBeingDragged.transform.localPosition: " + _ObjectBeingDragged.transform.localPosition);
+										//Debug.Log("Mouse Position: " + hit.point);
+										//Debug.Log("Is within: " + IsWithinCircle2D(_ObjectBeingDragged.transform.localPosition, hit.point, _ObjectBeingDragged.GetComponent<SpriteRenderer>().bounds.extents.x));
+										Debug.Log("FOUND: " + _ObjectBeingDragged);
 										_Grabbed = true;
 								}
 								
 								//case on cursor mode
 								if (Input.GetMouseButtonUp(0))
 								{
-										_QuadTree.RemoveParticle(_ObjectBeingDragged);
-									_Particles.Remove(_ObjectBeingDragged);
-									Destroy(_ObjectBeingDragged);
+									//		_QuadTree.RemoveParticle(_ObjectBeingDragged);
+									//	_Particles.Remove(_ObjectBeingDragged);
+									//	Destroy(_ObjectBeingDragged);
+									Debug.Log("<<<_______________Total leaf nodes before: " + RootQuadTree.TotalLeafNodes);
+									if (_ObjectBeingDragged != null)
+									{ 
+										RootQuadTree.Remove(_ObjectBeingDragged);
+										//_QuadTree.CollidesWith(_ObjectBeingDragged);
+										{ 
+											_Particles.Remove(_ObjectBeingDragged);
+											Destroy(_ObjectBeingDragged);
+										}
+									}
 									_Grabbed = false;
+									Debug.Log("<<<_______________Total leaf nodes After: " + RootQuadTree.TotalLeafNodes);
 								}
 								
 							}
@@ -163,9 +181,9 @@ public class Main : MonoBehaviour
 				}//switch end
 	}
 
-	public GameObject _SpawnQuadTreePartitioner(int CurrentDepth, Vector3 Center)
+	public GameObject _SpawnQuadTreePartitioner(int currentDepth, Vector3 center)
 	{
-		float scaleFactor = (((float)2) * (Mathf.Pow(2, CurrentDepth - 1)));
+		float scaleFactor = (((float)2) * (Mathf.Pow(2, currentDepth - 1)));
 		
 
 		Transform linesVerticle = _PartitionQuadTreePrefab.transform.GetChild(0);
@@ -184,10 +202,10 @@ public class Main : MonoBehaviour
 		linesHorizontal.localScale = prefabScale;
 		prefabScale.y *= scaleFactor;
 		//prefabScale.x *= scaleFactor/2;
-		Center.z = 10;
+		center.z = 10;
 		//instantiated here
 		GameObject temp;
-		_QuadTreePartitioners.Add(temp = Instantiate(_PartitionQuadTreePrefab, Center, Quaternion.identity) as GameObject);
+		_QuadTreePartitioners.Add(temp = Instantiate(_PartitionQuadTreePrefab, center, Quaternion.identity) as GameObject);
 
 		//reset data of prefab!
 		{ 
@@ -202,7 +220,7 @@ public class Main : MonoBehaviour
 		return temp;
 	}
 
-	public GameObject _SpawnKDTreePartitioner(float length,bool toRotate, Vector3 Center)
+	public GameObject _SpawnKDTreePartitioner(float length,bool toRotate, Vector3 center)
 	{ 
 		GameObject temp;
 
@@ -216,7 +234,7 @@ public class Main : MonoBehaviour
 
 		_PartitionKDTreePrefab.transform.localScale = scale;
 
-		_KDTreePartitioners.Add(temp = Instantiate(_PartitionKDTreePrefab, Center, (toRotate)? rotation: Quaternion.identity) as GameObject);
+		_KDTreePartitioners.Add(temp = Instantiate(_PartitionKDTreePrefab, center, (toRotate)? rotation: Quaternion.identity) as GameObject);
 		temp.transform.SetParent(KDTreeGrid.transform);
 
 		//rescale the prefab to original size
@@ -227,18 +245,28 @@ public class Main : MonoBehaviour
 		return temp;
 	}
 
+	public void ClearAndInsertQuadtree()
+	{
+		_Particles.Remove(tempRef);
+		ClearQuadtree();
+		_Particles.Add(tempRef);
+		RootQuadTree.Insert(tempRef);
+		RootKDTree.Insert(tempRef);
+	}
+	
+		
 	public void ClearQuadtree()
 	{
 		_DeletePartitioning();
-		_QuadTree.Clear();
-		_KDTree.Clear();
+		RootQuadTree.Clear();
+		RootKDTree.Clear();
 
 		foreach (GameObject particlePrefab in _Particles)
 			Destroy(particlePrefab);
 		_Particles.Clear();
 
 		Vector3 scaleOfParentQuad = ParentPrefab.transform.localScale;
-		_QuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
+		RootQuadTree = new QuadTree(ParentPrefab.transform.position, 172f, 172f);
 		QuadTree.SMainInstance = this;
 		KDTree.SMainInstance = this;
 
@@ -248,8 +276,8 @@ public class Main : MonoBehaviour
 
 	void _DeletePartitioning()
 	{
-		foreach (GameObject partitionPrefab in _QuadTreePartitioners)
-			Destroy(partitionPrefab);
+		//foreach (GameObject partitionPrefab in _QuadTreePartitioners)
+		//	Destroy(partitionPrefab);
 		_QuadTreePartitioners.Clear();
 	}
 
@@ -294,9 +322,15 @@ public class Main : MonoBehaviour
 		_Paint = !_Paint;
 	}
 
-	public void DestroyQuadTreeObject(GameObject ObjectToBeDestroyed)
+	public void DestroyQuadTreeObject(GameObject objectToBeDestroyed)
 	{
 		//_Partitioners.Remove(ObjectToBeDestroyed);
-		Destroy(ObjectToBeDestroyed);
+		Destroy(objectToBeDestroyed);
+	}
+
+	bool IsWithinCircle2D(Vector3 centerOfCircle, Vector3 point, float radiusOfCircle)
+	{
+
+		return (((centerOfCircle.x - point.x) * (centerOfCircle.x - point.x) + ((centerOfCircle.y - point.y) * (centerOfCircle.y - point.y))) < radiusOfCircle * radiusOfCircle);
 	}
 }
