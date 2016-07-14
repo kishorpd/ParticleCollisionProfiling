@@ -71,12 +71,33 @@ public class Main : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		UpdateQuadTree();
 		SpawnParticleOnClick();
-		//TextBox.text = "Total Leaf Nodes:" + _QuadTree.TotalLeafNodes + 
-		//				"\n Total Partitions" + _Partitioners.Count;
+		TextBox.text = "Total Leaf Nodes:" + RootQuadTree.TotalLeafNodes +
+						"\n Total Partitions" + _QuadTreePartitioners.Count;
 
 	}
 
+	void UpdateQuadTree()
+	{
+		if (_Particles.Count > 1)
+		{ 
+		//	foreach (GameObject particleObj in _Particles)
+		//	{
+			//		RootQuadTree.Remove(particleObj);
+		//	}
+
+
+			RootQuadTree.Clear();//.Remove(_Particles[0]);
+			//RootQuadTree.Remove(_Particles[1]);
+
+			foreach (GameObject particleObj in _Particles)
+			{
+				//Debug.Log("particleObj.transform.localPosition: " + particleObj.transform.localPosition);
+				RootQuadTree.Insert(particleObj); 
+			}
+		}
+	}
 
 	void SpawnParticleOnClick()
 	{
@@ -102,13 +123,15 @@ public class Main : MonoBehaviour
 										_Particles.Remove(ParticleObject);
 										Destroy(ParticleObject);
 									}
+									else
+										RootKDTree.Insert(ParticleObject);
 							
-									//insert in the QuadTree
-									if (!RootKDTree.Insert(ParticleObject))
-									{
-										_Particles.Remove(ParticleObject);
-										Destroy(ParticleObject);
-									}
+									////insert in the QuadTree
+									//if (!RootKDTree.Insert(ParticleObject))
+									//{
+									//	_Particles.Remove(ParticleObject);
+									//	Destroy(ParticleObject);
+									//}
 								}
 								if (Input.GetMouseButtonUp(1))
 								{
@@ -130,11 +153,15 @@ public class Main : MonoBehaviour
 							{
 									if (_Grabbed)
 									{
-										//Vector3 TempPosition = Input.mousePosition;
-										//TempPosition.z = 9.2f;
-										//_ObjectBeingDragged.transform.position = Camera.main.ScreenToWorldPoint(TempPosition);
-										//_QuadTree.Insert(_ObjectBeingDragged);
+										//RootQuadTree.CollidesWith(_ObjectBeingDragged);
+
+										RootQuadTree.Remove(_ObjectBeingDragged);
+										Vector3 TempPosition = Input.mousePosition;
+										TempPosition.z = 9.2f;
+										_ObjectBeingDragged.transform.position = Camera.main.ScreenToWorldPoint(TempPosition);
+										RootQuadTree.Insert(_ObjectBeingDragged);
 									}
+									else
 								if (Input.GetMouseButtonDown(0))
 								{
 										_ObjectBeingDragged = RootQuadTree.ParticleUnderCursor(hit.point);
@@ -143,7 +170,8 @@ public class Main : MonoBehaviour
 										//Debug.Log("Mouse Position: " + hit.point);
 										//Debug.Log("Is within: " + IsWithinCircle2D(_ObjectBeingDragged.transform.localPosition, hit.point, _ObjectBeingDragged.GetComponent<SpriteRenderer>().bounds.extents.x));
 										Debug.Log("FOUND: " + _ObjectBeingDragged);
-										_Grabbed = true;
+										if (_ObjectBeingDragged != null)
+											_Grabbed = true;
 								}
 								
 								//case on cursor mode
@@ -154,14 +182,15 @@ public class Main : MonoBehaviour
 									//	Destroy(_ObjectBeingDragged);
 									Debug.Log("<<<_______________Total leaf nodes before: " + RootQuadTree.TotalLeafNodes);
 									if (_ObjectBeingDragged != null)
-									{ 
-										RootQuadTree.Remove(_ObjectBeingDragged);
-										//_QuadTree.CollidesWith(_ObjectBeingDragged);
-										{ 
-											_Particles.Remove(_ObjectBeingDragged);
-											Destroy(_ObjectBeingDragged);
-										}
+									{
+										//RootQuadTree.CollidesWith(_ObjectBeingDragged);
+										//RootQuadTree.Remove(_ObjectBeingDragged);
+										//{ 
+										//	_Particles.Remove(_ObjectBeingDragged);
+										//	Destroy(_ObjectBeingDragged);
+										//}
 									}
+									//_ObjectBeingDragged = null;
 									_Grabbed = false;
 									Debug.Log("<<<_______________Total leaf nodes After: " + RootQuadTree.TotalLeafNodes);
 								}

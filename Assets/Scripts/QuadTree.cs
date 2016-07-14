@@ -17,6 +17,7 @@ public class QuadTree {
 	private GameObject					_SelfPartitionPrefab = null;
 	private GameObject					_ChildNode = null;
 	static private GameObject			_SPreviousChildNode = null;
+	static private QuadTree				_SPreviousQuadTree = null;
 	private Dictionary<int, QuadTree>	_ChildNodes = new Dictionary<int, QuadTree>();
 	private bool						_PartitionDrawn = false;
 
@@ -77,7 +78,6 @@ public class QuadTree {
 
 			if (_ChildNode != null)
 			{
-				Debug.Log("SKIPPED THE BUG!!");
 				if (_ChildNode.transform.position == particleObject.transform.position)
 				{
 					return false;
@@ -553,21 +553,22 @@ public class QuadTree {
 
 	public void CollidesWith(GameObject particle)
 	{
-		if (_SPreviousChildNode != null)
+		if (_SPreviousQuadTree != null)
 		{
  			//clear the previously highlighted 
 		Debug.Log("Started to delete highlight");
-		HighlightChildren(_SPreviousChildNode, false);
+		//_SPreviousQuadTree = FindParticleParent(particle);
+		HighlightChildren(_SPreviousQuadTree, false);
 		}
 
 
-		_SPreviousChildNode = particle; 
-		HighlightChildren(particle, true);
+		_SPreviousQuadTree = FindParticleParent(particle);
+		HighlightChildren(_SPreviousQuadTree, true);
 	}
 
-	void HighlightChildren(GameObject particle, bool toHighlight)
+	void HighlightChildren(QuadTree tempQuadTree, bool toHighlight)
 	{
-		QuadTree tempQuadTree = FindParticleParent(particle);
+		//QuadTree tempQuadTree = FindParticleParent(particle);
 		tempQuadTree = tempQuadTree._ParentNode;
 		for (int leaf = 0; leaf < 4; ++leaf)
 		{
@@ -580,6 +581,7 @@ public class QuadTree {
 					else
 					{
 						tempQuadTree._ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.blue;
+						_SPreviousQuadTree = null;
 					}
 				}
 			}
