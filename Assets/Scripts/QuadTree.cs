@@ -21,6 +21,9 @@ public class QuadTree {
 	private Dictionary<int, QuadTree>	_ChildNodes = new Dictionary<int, QuadTree>();
 	private bool						_PartitionDrawn = false;
 
+
+	//static public 
+
 #if DEBUG
 	private int __SelfQuadrant = 0;
 #endif
@@ -602,5 +605,278 @@ public class QuadTree {
 //					_ChildNodes[leaf].ClearPartitionDrawn();
 //			}
 //		}
+	}
+
+
+	public List<Vector4> ClampLines(List<Vector4> lines)
+	{
+		List<Vector4> tempLines = new List<Vector4> ();
+
+		foreach (Vector4 line in lines)
+		{
+			tempLines.Add(line);
+		}
+
+		Vector4 tempLine = new Vector4();
+
+		bool wasClamped = false;
+
+		//foreach (Vector4 line in tempLines)
+		for (int line = 0; line < tempLines.Count; ++line )
+		{
+			tempLine = tempLines[line];
+			wasClamped = false;
+			//							(x,y+w)
+			//                +---------------------+
+			//                |                     |
+			//                |                     |
+			//                |                     |
+			//  (x-w,y)       |         (x,y)       |  (x+w,y)
+			//                |                     |
+			//                |                     |
+			//                |_____________________|
+			//                           (x,y-w)
+
+
+			//check for the UPPER BOUNDS for both points of each line
+			//p(x,y) 
+			float tempWidth = Width / 2;
+
+			if (tempLines[line].x > (Center.x + tempWidth))
+			{
+				tempLine.x = Center.x + tempWidth;
+				wasClamped = true;
+			}
+
+			if (tempLines[line].y > (Center.y + tempWidth))
+			{
+				tempLine.y = Center.y + tempWidth;
+				wasClamped = true;
+			}
+
+			//q(z,w)
+			if (tempLines[line].x > (Center.x + tempWidth))
+			{
+				tempLine.z = Center.x + tempWidth;
+				wasClamped = true;
+			}
+
+			if (tempLines[line].y > (Center.y + tempWidth))
+			{
+				tempLine.w = Center.y + tempWidth;
+				wasClamped = true;
+			}
+
+
+			//check for the LOWER BOUNDS for both points of each line
+			//p(x,y) 
+			if (tempLines[line].x < (Center.x - tempWidth))
+			{
+				tempLine.x = Center.x - tempWidth;
+				wasClamped = true;
+			}
+
+			if (tempLines[line].y < (Center.y - tempWidth))
+			{
+				tempLine.y = Center.y - tempWidth;
+				wasClamped = true;
+			}
+
+			//q(z,w)
+			if (tempLines[line].x < (Center.x - tempWidth))
+			{
+				tempLine.z = Center.x - tempWidth;
+				wasClamped = true;
+			}
+
+			if (tempLines[line].y < (Center.y - tempWidth))
+			{
+				tempLine.w = Center.y - tempWidth;
+				wasClamped = true;
+			}
+
+
+		//	if (wasClamped)
+		//	{
+		//		//Debug.Log("tempLine : " + tempLine);
+		//		if(_ParentNode != null)
+		//			Debug.Log("_ParentNode.InQuadrant(Center) : " + _ParentNode.InQuadrant(Center));
+		//	}
+			
+			tempLines[line] = tempLine;
+		}
+
+
+		//now that all the lines are clamped i am worried what I am going to do in future with them
+		//hoping for the best
+
+
+		//now check whether if all lines are in the current quadrant
+		int xCount = 0;
+		int yCount = 0;
+
+		//test one 
+
+		//  |              | 
+		//  |              | |------\   /
+		//  |              | |_______\ /
+		//  |              | 
+		//  |              | 
+
+		float x = tempLines[0].x;
+		float y = tempLines[0].y;
+
+		//if either of x and y are same  for all the lines then the frustum lies outside the square
+		foreach (Vector4 line in tempLines)
+		{
+			if (line.x == x)
+			{
+				xCount++;
+				//Debug.Log("line.x : " + line.x + " x : " + x);
+			}
+
+			if (line.y == y)
+			{
+				yCount++;
+			}
+		}
+
+		if ((xCount == 4)
+			||
+			(yCount == 4))
+		{
+			//Debug.Log("Frustum lies outside!!!! xCount : " + xCount);
+			//Debug.Log("Frustum lies outside!!!! yCount : " + yCount);
+			return null;
+		}
+		return tempLines;
+	}
+
+
+	bool IsWithinFrustrum()
+	{
+		if (_ChildNode == null)
+			return false;
+
+		List<Vector4> _SLinesOfFrustrum = SMainInstance.LinesOfFrustrum;
+
+		float x = _ChildNode.transform.position.x;
+		float y = _ChildNode.transform.position.y;
+
+
+		//double AreaOfQuad = 0;
+		float AreaSumOfTriangles = 0;
+
+	for (int vertex = 0; vertex < (4/*QUAD_SIDES*/); vertex++)
+	{
+		AreaSumOfTriangles += Mathf.Abs(
+			(0.5f)*(
+				((x - _SLinesOfFrustrum[vertex].z)*
+					(_SLinesOfFrustrum[vertex].y - y)) -
+				((x - _SLinesOfFrustrum[vertex].x) *
+					(_SLinesOfFrustrum[vertex].w - y))
+				));
+	}
+
+
+	//AreaOfQuad = Mathf.Abs(
+	//	(0.5f)*(
+	//		(_SLinesOfFrustrum[0].x - _SLinesOfFrustrum[1].x) *
+	//		(_SLinesOfFrustrum[0].w - _SLinesOfFrustrum[1].w) -
+	//		(_SLinesOfFrustrum[0].z - _SLinesOfFrustrum[1].z) *
+	//		(_SLinesOfFrustrum[0].y - _SLinesOfFrustrum[1].y)
+	//		));
+	//
+	//Debug.Log("(int)AreaSumOfTriangles : " + (int)AreaSumOfTriangles + "(int)AreaOfQuad" + (int)AreaOfQuad + "v : " + ((int)AreaSumOfTriangles == (int)AreaOfQuad));
+
+	return ((int)AreaSumOfTriangles == (int)SMainInstance.AreaOfFrustum);
+
+	}
+
+	public void CheckForIntersectionWithQuad(Vector3 center, List<Vector4> lines)
+	{
+		//check the number of lines passed in, if there are no partitions then set the color of partition to red
+		//turn on the particle contained if it lies in the trapezium
+
+		//
+		if (lines == null)
+			return;
+
+		if (TotalLeafNodes > 1)
+		{ 
+		//	Debug.Log(" lines.Count : " + lines.Count);
+			switch (lines.Count)
+			{
+				case 4:
+					{
+						//the Quad lies within the tree space
+						//	   |			|			|
+						//	   |			|	___		|
+						//	   |			|	\_/		|  here it lies in first quadrant completelyu
+						//	   |			|			|  if the partition was present then further thing will get handled in the childNodes
+						//	   __________________________
+						//	   |			|			|
+						//	   |			|			|
+						//	   |			|			|
+						//	   |			|			|
+
+					
+						//so now that we have four lines , let us check in how many quadrants it overlaps with
+
+						for (int leaf = 0; leaf < 4; ++leaf)
+						{
+							if (_ChildNodes.ContainsKey(leaf))
+							{
+								//clamp for each qaudrant
+								//check if a line is present in the quadrant by midpoint test
+								List<Vector4> tempLines = _ChildNodes[leaf].ClampLines(lines);
+
+								if (tempLines != null)
+								{
+									_ChildNodes[leaf].CheckForIntersectionWithQuad(center, tempLines);
+									if (_ChildNodes[leaf]._ChildNode != null)
+									{ 
+									//Debug.Log("leaf : " + leaf + " _CurrentDepth : " + _CurrentDepth);
+										if (_ChildNodes[leaf].IsWithinFrustrum())
+											_ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.green;
+									else
+											_ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.yellow;
+									}
+								}
+									//Debug.Log("leaf : " + leaf);
+							}
+						}
+	
+					}
+					break;
+
+
+				case 3:
+					{
+					
+					}
+					break;
+
+
+				case 2:
+					{
+					}
+					break;
+
+
+				case 1:
+					{
+					}
+					break;
+
+
+				case 0:
+					{
+					}
+					break;
+
+
+			}
+		}
 	}
 }

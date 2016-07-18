@@ -5,7 +5,13 @@ using System.Collections.Generic;
 
 public class Main : MonoBehaviour
 {
-	
+
+	public GameObject bot;
+	public float AreaOfFrustum = 0;
+	public GameObject botFrustumCenter;
+
+	List<GameObject> Vertices;
+
 	public QuadTree AQuadTree;
 
 	public GameObject ParentPrefab;
@@ -35,6 +41,8 @@ public class Main : MonoBehaviour
 	private GameObject _PartitionQuadTreePrefab;
 	private GameObject _PartitionKDTreePrefab;
 	public 	GameObject tempRef = null;
+	public List<Vector4> LinesOfFrustrum;
+
 
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
@@ -65,6 +73,9 @@ public class Main : MonoBehaviour
 		_PartitionKDTreePrefab = (GameObject)Resources.Load("Prefabs/Seperator");
 		QuadTreeGrid.SetActive(false);
 		KDTreeGrid.SetActive(false);
+		Vertices = bot.GetComponent<ControlBot>().Vertices;
+		
+		CreateQuad();
 
 	}
 
@@ -73,6 +84,7 @@ public class Main : MonoBehaviour
 	{
 		UpdateQuadTree();
 		SpawnParticleOnClick();
+		DisplayToBeRenderedRegions();
 		TextBox.text = "Total Leaf Nodes:" + RootQuadTree.TotalLeafNodes +
 						"\n Total Partitions" + _QuadTreePartitioners.Count;
 
@@ -93,6 +105,11 @@ public class Main : MonoBehaviour
 
 			foreach (GameObject particleObj in _Particles)
 			{
+				particleObj.gameObject.GetComponent<SpriteRenderer>().color = Color.blue;
+				
+				AreaOfFrustum = IsWithinFrustrum();
+
+				//particleObj.gameObject.GetComponent
 				//Debug.Log("particleObj.transform.localPosition: " + particleObj.transform.localPosition);
 				RootQuadTree.Insert(particleObj); 
 			}
@@ -123,8 +140,8 @@ public class Main : MonoBehaviour
 										_Particles.Remove(ParticleObject);
 										Destroy(ParticleObject);
 									}
-									else
-										RootKDTree.Insert(ParticleObject);
+									//else
+									//	RootKDTree.Insert(ParticleObject);
 							
 									////insert in the QuadTree
 									//if (!RootKDTree.Insert(ParticleObject))
@@ -183,7 +200,7 @@ public class Main : MonoBehaviour
 									Debug.Log("<<<_______________Total leaf nodes before: " + RootQuadTree.TotalLeafNodes);
 									if (_ObjectBeingDragged != null)
 									{
-										//RootQuadTree.CollidesWith(_ObjectBeingDragged);
+									//	RootQuadTree.CollidesWith(_ObjectBeingDragged);
 										//RootQuadTree.Remove(_ObjectBeingDragged);
 										//{ 
 										//	_Particles.Remove(_ObjectBeingDragged);
@@ -362,4 +379,59 @@ public class Main : MonoBehaviour
 
 		return (((centerOfCircle.x - point.x) * (centerOfCircle.x - point.x) + ((centerOfCircle.y - point.y) * (centerOfCircle.y - point.y))) < radiusOfCircle * radiusOfCircle);
 	}
+
+
+	void DisplayToBeRenderedRegions()
+	{
+		//RootQuadTree.CheckForIntersectionWithQuad(botFrustumCenter.transform.position, CreateQuad());
+		RootQuadTree.CheckForIntersectionWithQuad(botFrustumCenter.transform.position, RootQuadTree.ClampLines(CreateQuad()));
+	}
+
+
+	public List<Vector4> CreateQuad()
+	{
+		List<Vector4> lines = new List<Vector4>();
+
+		for (int index = 0; index < 4; ++index)
+			lines.Add(CreateLine(index));
+
+		LinesOfFrustrum = lines;// SMainInstance.CreateQuad();
+
+		return lines;
+	}
+
+	Vector4 CreateLine(int index)
+	{ 
+		Vector4 nextLine = new Vector4();
+		nextLine.x = Vertices[index].transform.position.x;
+		nextLine.y = Vertices[index].transform.position.y;
+		nextLine.z = Vertices[index + 1].transform.position.x;
+		nextLine.w = Vertices[index + 1].transform.position.y;
+		return nextLine;
+	}
+
+	float IsWithinFrustrum()
+	{
+
+
+		float x = botFrustumCenter.transform.position.x;
+		float y = botFrustumCenter.transform.position.y;
+
+
+		float AreaSumOfTriangles = 0;
+
+		for (int vertex = 0; vertex < (4/*QUAD_SIDES*/); vertex++)
+		{
+			AreaSumOfTriangles += Mathf.Abs(
+				(0.5f) * (
+					((x - LinesOfFrustrum[vertex].z) *
+						(LinesOfFrustrum[vertex].y - y)) -
+					((x - LinesOfFrustrum[vertex].x) *
+						(LinesOfFrustrum[vertex].w - y))
+					));
+		}
+
+		return AreaSumOfTriangles;
+	}
+
 }

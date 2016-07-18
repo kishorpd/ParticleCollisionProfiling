@@ -22,7 +22,7 @@ public class ParticleMove : MonoBehaviour
 	float stepX = 0.0f;
 	float stepY = 0.0f;
 
-
+	static bool _S_ToMove = false;
 	public Vector3 position;
 	Vector3 scale;
 
@@ -35,11 +35,16 @@ public class ParticleMove : MonoBehaviour
 
 	}
 
+	public void ToggleMove()
+	{
+		_S_ToMove = !_S_ToMove;
+	}
 
 	// Update is called once per frame
 	void Update()
 	{
-		move();
+		if (_S_ToMove)
+			move();
 	}
 
 	// Update is called once per frame
