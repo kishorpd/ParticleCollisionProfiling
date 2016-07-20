@@ -620,6 +620,7 @@ public class QuadTree {
 		Vector4 tempLine = new Vector4();
 
 		bool wasClamped = false;
+		float tempWidth = Width / 2;
 
 		//foreach (Vector4 line in tempLines)
 		for (int line = 0; line < tempLines.Count; ++line )
@@ -637,65 +638,67 @@ public class QuadTree {
 			//                |_____________________|
 			//                           (x,y-w)
 
-
+			//if
 			//check for the UPPER BOUNDS for both points of each line
+			//else
+			//check for the LOWER BOUNDS for both points of each line
 			//p(x,y) 
-			float tempWidth = Width / 2;
 
 			if (tempLines[line].x > (Center.x + tempWidth))
 			{
 				tempLine.x = Center.x + tempWidth;
 				wasClamped = true;
 			}
+			else
+				//p(x,y) 
+				if (tempLines[line].x < (Center.x - tempWidth))
+				{
+					tempLine.x = Center.x - tempWidth;
+					wasClamped = true;
+				}
+
 
 			if (tempLines[line].y > (Center.y + tempWidth))
 			{
 				tempLine.y = Center.y + tempWidth;
 				wasClamped = true;
 			}
-
-			//q(z,w)
-			if (tempLines[line].x > (Center.x + tempWidth))
-			{
-				tempLine.z = Center.x + tempWidth;
-				wasClamped = true;
-			}
-
-			if (tempLines[line].y > (Center.y + tempWidth))
-			{
-				tempLine.w = Center.y + tempWidth;
-				wasClamped = true;
-			}
+			else
+				if (tempLines[line].y < (Center.y - tempWidth))
+				{
+					tempLine.y = Center.y - tempWidth;
+					wasClamped = true;
+				}
 
 
-			//check for the LOWER BOUNDS for both points of each line
-			//p(x,y) 
-			if (tempLines[line].x < (Center.x - tempWidth))
-			{
-				tempLine.x = Center.x - tempWidth;
-				wasClamped = true;
-			}
-
-			if (tempLines[line].y < (Center.y - tempWidth))
-			{
-				tempLine.y = Center.y - tempWidth;
-				wasClamped = true;
-			}
-
-			//q(z,w)
-			if (tempLines[line].x < (Center.x - tempWidth))
-			{
-				tempLine.z = Center.x - tempWidth;
-				wasClamped = true;
-			}
-
-			if (tempLines[line].y < (Center.y - tempWidth))
-			{
-				tempLine.w = Center.y - tempWidth;
-				wasClamped = true;
-			}
-
-
+		//	//q(z,w)
+		//	if (tempLines[line].x > (Center.x + tempWidth))
+		//	{
+		//		tempLine.z = Center.x + tempWidth;
+		//		wasClamped = true;
+		//	}
+		//	else
+		//		//q(z,w)
+		//		if (tempLines[line].x < (Center.x - tempWidth))
+		//		{
+		//			tempLine.z = Center.x - tempWidth;
+		//			wasClamped = true;
+		//		}
+		//
+		//
+		//	if (tempLines[line].y > (Center.y + tempWidth))
+		//	{
+		//		tempLine.w = Center.y + tempWidth;
+		//		wasClamped = true;
+		//	}
+		//	else
+		//		if (tempLines[line].y < (Center.y - tempWidth))
+		//		{
+		//			tempLine.w = Center.y - tempWidth;
+		//			wasClamped = true;
+		//		}
+		//
+		//
 		//	if (wasClamped)
 		//	{
 		//		//Debug.Log("tempLine : " + tempLine);
@@ -739,6 +742,22 @@ public class QuadTree {
 			{
 				yCount++;
 			}
+
+		}
+
+		for (int line = 0; line < tempLines.Count; ++line)
+		{
+
+			if (DrawFrustum.DrawClamping)
+			{
+				if (_CurrentDepth > 0)// && _ParentNode.InQuadrant(Center) == 0)//this overlays the border of the Frustum
+				{
+					DrawFrustum._SClampedLines.Add(new Vector3(tempLines[line].x, tempLines[line].y, 0));
+					DrawFrustum._SClampedLines.Add(new Vector3(lines[line].x, lines[line].y, 0));
+					DrawFrustum._SClampedLines.Add(new Vector3(tempLines[line].z, tempLines[line].w, 0));
+					DrawFrustum._SClampedLines.Add(new Vector3(lines[line].z, lines[line].w, 0));
+				}
+			}
 		}
 
 		if ((xCount == 4)
@@ -749,6 +768,7 @@ public class QuadTree {
 			//Debug.Log("Frustum lies outside!!!! yCount : " + yCount);
 			return null;
 		}
+
 		return tempLines;
 	}
 
@@ -758,7 +778,7 @@ public class QuadTree {
 		if (_ChildNode == null)
 			return false;
 
-		List<Vector4> _SLinesOfFrustrum = SMainInstance.LinesOfFrustrum;
+		List<Vector4> LinesOfFrustrum = SMainInstance.LinesOfFrustrum;
 
 		float x = _ChildNode.transform.position.x;
 		float y = _ChildNode.transform.position.y;
@@ -771,10 +791,10 @@ public class QuadTree {
 	{
 		AreaSumOfTriangles += Mathf.Abs(
 			(0.5f)*(
-				((x - _SLinesOfFrustrum[vertex].z)*
-					(_SLinesOfFrustrum[vertex].y - y)) -
-				((x - _SLinesOfFrustrum[vertex].x) *
-					(_SLinesOfFrustrum[vertex].w - y))
+				((x - LinesOfFrustrum[vertex].z)*
+					(LinesOfFrustrum[vertex].y - y)) -
+				((x - LinesOfFrustrum[vertex].x) *
+					(LinesOfFrustrum[vertex].w - y))
 				));
 	}
 
@@ -795,6 +815,7 @@ public class QuadTree {
 
 	public void CheckForIntersectionWithQuad(Vector3 center, List<Vector4> lines)
 	{
+		SMainInstance.SVisitedNodes++;
 		//check the number of lines passed in, if there are no partitions then set the color of partition to red
 		//turn on the particle contained if it lies in the trapezium
 
@@ -829,21 +850,32 @@ public class QuadTree {
 							{
 								//clamp for each qaudrant
 								//check if a line is present in the quadrant by midpoint test
+									if (_ChildNodes[leaf]._ChildNode != null)
+									{ 
+									//Debug.Log("leaf : " + leaf + " _CurrentDepth : " + _CurrentDepth);
+										if (_ChildNodes[leaf].IsWithinFrustrum())
+										{
+											_ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.cyan;
+											SMainInstance.SRenderedParticles++;
+											//continue;
+										}
+										else
+										{ 
+											_ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.yellow;
+											SMainInstance.SVisitedParticles++;
+										}
+									}
 								List<Vector4> tempLines = _ChildNodes[leaf].ClampLines(lines);
 
 								if (tempLines != null)
 								{
 									_ChildNodes[leaf].CheckForIntersectionWithQuad(center, tempLines);
-									if (_ChildNodes[leaf]._ChildNode != null)
+									if (_CurrentDepth > 0)
 									{ 
-									//Debug.Log("leaf : " + leaf + " _CurrentDepth : " + _CurrentDepth);
-										if (_ChildNodes[leaf].IsWithinFrustrum())
-											_ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.green;
-									else
-											_ChildNodes[leaf]._ChildNode.gameObject.GetComponent<SpriteRenderer>().color = Color.yellow;
+											Transform bg = _SelfPartitionPrefab.transform.GetChild(2);
+											bg.gameObject.SetActive(true);
 									}
 								}
-									//Debug.Log("leaf : " + leaf);
 							}
 						}
 	

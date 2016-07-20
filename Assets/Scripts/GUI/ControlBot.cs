@@ -4,9 +4,9 @@ using System.Collections.Generic;
 
 public class ControlBot : MonoBehaviour {
 
-	public float _MoveSpeed = 0.4f;
+	public float _MoveSpeed = 2f;
 	float _RotationY = 0.0f;
-	public static float SLookSpeed = 1.8f;
+	public static float SLookSpeed = 2f;
 
 	public List<GameObject> Vertices;
 
@@ -30,7 +30,7 @@ public class ControlBot : MonoBehaviour {
 
 			if (Input.GetKeyDown(KeyCode.T))
 			{
-				Debug.Log("TTTTTTTTTTTTTTTTTTTTTTTT");
+				//Debug.Log("TTTTTTTTTTTTTTTTTTTTTTTT");
 				Vector3 pos = Vertices[0].transform.localPosition;
 				pos.x -= 5;
 				Vertices[0].transform.localPosition = pos;

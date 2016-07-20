@@ -42,7 +42,11 @@ public class Main : MonoBehaviour
 	private GameObject _PartitionKDTreePrefab;
 	public 	GameObject tempRef = null;
 	public List<Vector4> LinesOfFrustrum;
+	public int SVisitedParticles = 0;
+	public int SVisitedNodes = 0;
+	public int SRenderedParticles = 0;
 
+	bool DisplayLinesOfQuadTree = false;
 
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
@@ -76,17 +80,25 @@ public class Main : MonoBehaviour
 		Vertices = bot.GetComponent<ControlBot>().Vertices;
 		
 		CreateQuad();
-
+		DisplayLinesOfPartitions();
+		DisplayLinesOfPartitions();
 	}
 
 	// Update is called once per frame
 	void Update()
 	{
+		SVisitedParticles = 0;
+		SRenderedParticles = 0;
+		SVisitedNodes = 0;
+
 		UpdateQuadTree();
 		SpawnParticleOnClick();
 		DisplayToBeRenderedRegions();
-		TextBox.text = "Total Leaf Nodes:" + RootQuadTree.TotalLeafNodes +
-						"\n Total Partitions" + _QuadTreePartitioners.Count;
+		TextBox.text = "Total Leaf Nodes : " + RootQuadTree.TotalLeafNodes +
+						"\n Total Partitions : " + _QuadTreePartitioners.Count +
+						"\n Visited Particles : " + (SVisitedParticles + SRenderedParticles) +
+						"\n Visited Nodes : " + SVisitedNodes +
+						"\n Rendered Particles : " + SRenderedParticles;
 
 	}
 
@@ -102,12 +114,12 @@ public class Main : MonoBehaviour
 
 			RootQuadTree.Clear();//.Remove(_Particles[0]);
 			//RootQuadTree.Remove(_Particles[1]);
-
+			_QuadTreePartitioners.Clear();
 			foreach (GameObject particleObj in _Particles)
 			{
 				particleObj.gameObject.GetComponent<SpriteRenderer>().color = Color.blue;
 				
-				AreaOfFrustum = IsWithinFrustrum();
+				AreaOfFrustum = FrustumArea();
 
 				//particleObj.gameObject.GetComponent
 				//Debug.Log("particleObj.transform.localPosition: " + particleObj.transform.localPosition);
@@ -234,19 +246,29 @@ public class Main : MonoBehaviour
 
 		Transform linesVerticle = _PartitionQuadTreePrefab.transform.GetChild(0);
 		Transform linesHorizontal = _PartitionQuadTreePrefab.transform.GetChild(1);
+		Transform bg = _PartitionQuadTreePrefab.transform.GetChild(2);
 
 
+
+		bg.gameObject.SetActive(false);
 
 		//grab prefab data before spawning
 		Vector3 prefabScale = linesVerticle.localScale;
+		Vector3 bgScale = bg.localScale;
 		
 		//set scale acacording to depth
 		prefabScale.y /= scaleFactor;
+		bgScale.x /= scaleFactor;
+		bgScale.y /= scaleFactor;
 		prefabScale.x = 5;
+		//bgScale.x = 5;
 		//prefabScale.x /= scaleFactor / 2;
+		bg.localScale = bgScale;
 		linesVerticle.localScale = prefabScale;
 		linesHorizontal.localScale = prefabScale;
 		prefabScale.y *= scaleFactor;
+		bgScale.y *= scaleFactor;
+		bgScale.x *= scaleFactor;
 		//prefabScale.x *= scaleFactor/2;
 		center.z = 10;
 		//instantiated here
@@ -258,6 +280,7 @@ public class Main : MonoBehaviour
 			//reset scale
 			linesVerticle.localScale = prefabScale;
 			linesHorizontal.localScale = prefabScale;
+			bg.localScale = bgScale;
 		}
 
 		temp.transform.SetParent(QuadTreeGrid.transform);
@@ -410,7 +433,7 @@ public class Main : MonoBehaviour
 		return nextLine;
 	}
 
-	float IsWithinFrustrum()
+	float FrustumArea()
 	{
 
 
@@ -432,6 +455,13 @@ public class Main : MonoBehaviour
 		}
 
 		return AreaSumOfTriangles;
+	}
+
+	public void DisplayLinesOfPartitions()
+	{
+		DisplayLinesOfQuadTree = !DisplayLinesOfQuadTree;
+		_PartitionQuadTreePrefab.transform.GetChild(0).gameObject.SetActive(DisplayLinesOfQuadTree);
+		_PartitionQuadTreePrefab.transform.GetChild(1).gameObject.SetActive(DisplayLinesOfQuadTree);
 	}
 
 }
