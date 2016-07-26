@@ -94,11 +94,14 @@ public class Main : MonoBehaviour
 		UpdateQuadTree();
 		SpawnParticleOnClick();
 		DisplayToBeRenderedRegions();
+		RootQuadTree.DrawHierarchy();
 		TextBox.text = "Total Leaf Nodes : " + RootQuadTree.TotalLeafNodes +
 						"\n Total Partitions : " + _QuadTreePartitioners.Count +
 						"\n Visited Particles : " + (SVisitedParticles + SRenderedParticles) +
 						"\n Visited Nodes : " + SVisitedNodes +
 						"\n Rendered Particles : " + SRenderedParticles;
+
+
 
 	}
 

@@ -911,4 +911,25 @@ public class QuadTree {
 			}
 		}
 	}
+
+	public void DrawHierarchy()
+	{
+		for (int i = 0; i < 4; ++i)
+		{
+			if (_ChildNodes.ContainsKey(i))
+			{
+				if (_ChildNodes[i]._ChildNode != null)
+				{ 
+					DrawFrustum._SHierarchyLines.Add(Center);
+					DrawFrustum._SHierarchyLines.Add(_ChildNodes[i]._ChildNode.transform.position);
+					continue;
+				}
+				DrawFrustum._SHierarchyLines.Add(Center);
+				DrawFrustum._SHierarchyLines.Add(_ChildNodes[i].Center);
+				_ChildNodes[i].DrawHierarchy();
+			}
+		}
+
+
+	}
 }

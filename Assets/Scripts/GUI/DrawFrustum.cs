@@ -8,12 +8,14 @@ public class DrawFrustum : MonoBehaviour {
 	 List<GameObject> Vertices;
 
 	 public static List<Vector3> _SClampedLines;
+	 public static List<Vector3> _SHierarchyLines;
 
 	public Material lineMaterial;
 	private Color mainColor = new Color(1f, 0f, 1f, 1f);
 	private Color subColor = new Color(0f, 0.5f, 1f, 0f);
 
 	static public bool DrawClamping = false;
+	static public bool DrawHierarchy = false;
 
 	public Vector3 pos;
 
@@ -21,6 +23,7 @@ public class DrawFrustum : MonoBehaviour {
 	void Start () {
 		pos = new Vector3();
 		_SClampedLines = new List<Vector3>();
+		_SHierarchyLines = new List<Vector3>();
 		Vertices = bot.GetComponent<ControlBot>().Vertices;
 		Debug.Log("Vertices.Count : " + Vertices.Count);
 	}
@@ -34,6 +37,11 @@ public class DrawFrustum : MonoBehaviour {
 	public void ToggleClampView()
 	{
 		DrawClamping = !DrawClamping;
+	}
+
+	public void ToggleHierarchyView()
+	{
+		DrawHierarchy = !DrawHierarchy;
 	}
 
 	void CreateLineMaterial()
@@ -72,10 +80,10 @@ public class DrawFrustum : MonoBehaviour {
 		GL.Color(Color.red);
 
 		if (DrawClamping)
-		{ 
 			DrawClamps();
-			_SClampedLines.Clear();
-		}
+
+		if (DrawHierarchy)
+			DrawHierarchyLines();
 
 		GL.End();
 		GL.PopMatrix();
@@ -96,6 +104,25 @@ public class DrawFrustum : MonoBehaviour {
 		{
 			GL.Vertex(line);
 		}
+			_SClampedLines.Clear();
+	}
+
+	void DrawHierarchyLines()
+	{
+		GL.Color(Color.blue);
+			//Debug.Log(" No Line ");
+		foreach (Vector3 line in _SHierarchyLines)
+		{
+			GL.Vertex(line);
+		//	Debug.Log(" Line " + line);
+		}
+		_SHierarchyLines.Clear();
+	}
+
+	public void DrawLinePQ(Vector3 p, Vector3 q)
+	{
+		GL.Vertex(p);
+		GL.Vertex(q);
 	}
 
 }
