@@ -45,8 +45,10 @@ public class Main : MonoBehaviour
 	public int SVisitedParticles = 0;
 	public int SVisitedNodes = 0;
 	public int SRenderedParticles = 0;
+	long LastMemoryOfQuadtree = 0;
 
 	bool DisplayLinesOfQuadTree = false;
+	bool IsNaiveApproach = false;
 
 	Ray myRay;      // initializing the ray
 	RaycastHit hit; // initializing the raycasthit
@@ -87,19 +89,45 @@ public class Main : MonoBehaviour
 	// Update is called once per frame
 	void Update()
 	{
+		if(IsNaiveApproach)
+		{
+			NaiveApproach();
+			TextBox.text = "Total Leaf Nodes : " + RootQuadTree.TotalLeafNodes +
+							"\n Total Partitions : " + _QuadTreePartitioners.Count +
+							"\n Visited Particles : " + (SVisitedParticles + SRenderedParticles) +
+							"\n Visited Nodes : " + SVisitedNodes +
+							"\n Size : " + LastMemoryOfQuadtree +
+							"\n Rendered Particles : " + SRenderedParticles;
+			return;
+		}
+		
 		SVisitedParticles = 0;
 		SRenderedParticles = 0;
 		SVisitedNodes = 0;
 
+
+
+		//long memoryOfQuadTree =
 		UpdateQuadTree();
+
+	//	if (LastMemoryOfQuadtree != memoryOfQuadTree)
+	//	{
+	//		LastMemoryOfQuadtree = memoryOfQuadTree;
+	//	}
+
 		SpawnParticleOnClick();
 		DisplayToBeRenderedRegions();
-		RootQuadTree.DrawHierarchy();
 		TextBox.text = "Total Leaf Nodes : " + RootQuadTree.TotalLeafNodes +
 						"\n Total Partitions : " + _QuadTreePartitioners.Count +
 						"\n Visited Particles : " + (SVisitedParticles + SRenderedParticles) +
 						"\n Visited Nodes : " + SVisitedNodes +
+	//					"\n Size : " + LastMemoryOfQuadtree +
 						"\n Rendered Particles : " + SRenderedParticles;
+		//// This ensure a reference to object keeps object in memory
+
+		if (DrawFrustum.DrawHierarchy)
+			RootQuadTree.DrawPartitions();
+	//	System.GC.KeepAlive(this);
 
 
 
@@ -107,6 +135,10 @@ public class Main : MonoBehaviour
 
 	void UpdateQuadTree()
 	{
+		long StopBytes = 0;
+		// Get total memory before create your dictionnary
+		long StartBytes = 0;
+		
 		if (_Particles.Count > 1)
 		{ 
 		//	foreach (GameObject particleObj in _Particles)
@@ -118,17 +150,27 @@ public class Main : MonoBehaviour
 			RootQuadTree.Clear();//.Remove(_Particles[0]);
 			//RootQuadTree.Remove(_Particles[1]);
 			_QuadTreePartitioners.Clear();
+
+
+
+			// Perform a collection of all generations up to and including 2.
+			//System.GC.Collect(2);
+
+			//StartBytes = System.GC.GetTotalMemory(false);
+			// Get total memory after create your dictionnary
+
+				AreaOfFrustum = FrustumArea();
+
 			foreach (GameObject particleObj in _Particles)
 			{
 				particleObj.gameObject.GetComponent<SpriteRenderer>().color = Color.blue;
-				
-				AreaOfFrustum = FrustumArea();
-
-				//particleObj.gameObject.GetComponent
-				//Debug.Log("particleObj.transform.localPosition: " + particleObj.transform.localPosition);
 				RootQuadTree.Insert(particleObj); 
 			}
+
+			//StopBytes = System.GC.GetTotalMemory(false);
 		}
+
+		//return ((long)(StopBytes - StartBytes));
 	}
 
 	void SpawnParticleOnClick()
@@ -201,7 +243,7 @@ public class Main : MonoBehaviour
 										//Debug.Log("_ObjectBeingDragged.transform.localPosition: " + _ObjectBeingDragged.transform.localPosition);
 										//Debug.Log("Mouse Position: " + hit.point);
 										//Debug.Log("Is within: " + IsWithinCircle2D(_ObjectBeingDragged.transform.localPosition, hit.point, _ObjectBeingDragged.GetComponent<SpriteRenderer>().bounds.extents.x));
-										Debug.Log("FOUND: " + _ObjectBeingDragged);
+										//Debug.Log("FOUND: " + _ObjectBeingDragged);
 										if (_ObjectBeingDragged != null)
 											_Grabbed = true;
 								}
@@ -212,7 +254,7 @@ public class Main : MonoBehaviour
 									//		_QuadTree.RemoveParticle(_ObjectBeingDragged);
 									//	_Particles.Remove(_ObjectBeingDragged);
 									//	Destroy(_ObjectBeingDragged);
-									Debug.Log("<<<_______________Total leaf nodes before: " + RootQuadTree.TotalLeafNodes);
+									//Debug.Log("<<<_______________Total leaf nodes before: " + RootQuadTree.TotalLeafNodes);
 									if (_ObjectBeingDragged != null)
 									{
 									//	RootQuadTree.CollidesWith(_ObjectBeingDragged);
@@ -224,7 +266,7 @@ public class Main : MonoBehaviour
 									}
 									//_ObjectBeingDragged = null;
 									_Grabbed = false;
-									Debug.Log("<<<_______________Total leaf nodes After: " + RootQuadTree.TotalLeafNodes);
+								//	Debug.Log("<<<_______________Total leaf nodes After: " + RootQuadTree.TotalLeafNodes);
 								}
 								
 							}
@@ -361,18 +403,12 @@ public class Main : MonoBehaviour
 
 	public void TogglePartitionView()
 	{
-		if (!DisplayQuadPartitions)
-		{
-			DisplayQuadPartitions = true;
-			QuadTreeGrid.SetActive(true);
-			//_QuadTree.SetPartitionVisibility(DisplayPartitions);
-		}
-		else
-		{
-			DisplayQuadPartitions = false;
-			QuadTreeGrid.SetActive(false);
-			//_QuadTree.SetPartitionVisibility(DisplayPartitions);
-		}
+		DisplayQuadPartitions = !DisplayQuadPartitions;
+		
+		//DisplayQuadPartitions = false;
+		QuadTreeGrid.SetActive(DisplayQuadPartitions);
+		
+		_PartitionQuadTreePrefab.SetActive(DisplayQuadPartitions);
 	}
 
 	public void ToggleKDTreeDisplay()
@@ -457,6 +493,7 @@ public class Main : MonoBehaviour
 					));
 		}
 
+		//Debug.Log("(int)AreaOfFrustum : " + (int)AreaSumOfTriangles);
 		return AreaSumOfTriangles;
 	}
 
@@ -467,4 +504,64 @@ public class Main : MonoBehaviour
 		_PartitionQuadTreePrefab.transform.GetChild(1).gameObject.SetActive(DisplayLinesOfQuadTree);
 	}
 
+	void NaiveApproach()
+	{
+
+		AreaOfFrustum = FrustumArea();
+		//Debug.Log("(int)AreaOfFrustum : " + (int)AreaOfFrustum);
+
+		foreach (GameObject particleObj in _Particles)
+		{
+			if (IsWithinFrustrum(particleObj) == (int)AreaOfFrustum)
+			particleObj.gameObject.GetComponent<SpriteRenderer>().color = Color.cyan;
+			else
+			particleObj.gameObject.GetComponent<SpriteRenderer>().color = Color.yellow;
+			//AreaOfFrustum = FrustumArea();
+
+			//particleObj.gameObject.GetComponent
+			//Debug.Log("particleObj.transform.localPosition: " + particleObj.transform.localPosition);
+			//RootQuadTree.Insert(particleObj);
+		}
+
+
+	}
+
+
+
+
+
+	int IsWithinFrustrum(GameObject particleObj)
+	{
+
+		CreateQuad();
+		//List<Vector4> LinesOfFrustrum = LinesOfFrustrum;
+
+		float x = particleObj.transform.position.x;
+		float y = particleObj.transform.position.y;
+
+		float AreaSumOfTriangles = 0;
+
+		for (int vertex = 0; vertex < (4/*QUAD_SIDES*/); vertex++)
+		{
+			AreaSumOfTriangles += Mathf.Abs(
+				(0.5f) * (
+					((x - LinesOfFrustrum[vertex].z) *
+						(LinesOfFrustrum[vertex].y - y)) -
+					((x - LinesOfFrustrum[vertex].x) *
+						(LinesOfFrustrum[vertex].w - y))
+					));
+		}
+		//Debug.Log("(int)AreaSumOfTriangles : " + (int)AreaSumOfTriangles);
+
+
+
+		//return ((int)AreaSumOfTriangles == (int)AreaOfFrustum);
+		return (int)AreaSumOfTriangles;
+	}
+
+	public void SetApproach()
+	{
+		QuadTreeGrid.SetActive(IsNaiveApproach);
+		IsNaiveApproach = !IsNaiveApproach;
+	}
 }

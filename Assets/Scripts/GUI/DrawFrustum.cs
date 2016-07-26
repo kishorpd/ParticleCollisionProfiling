@@ -9,6 +9,7 @@ public class DrawFrustum : MonoBehaviour {
 
 	 public static List<Vector3> _SClampedLines;
 	 public static List<Vector3> _SHierarchyLines;
+	 public static List<Vector3> _SPartitionLines;
 
 	public Material lineMaterial;
 	private Color mainColor = new Color(1f, 0f, 1f, 1f);
@@ -16,6 +17,7 @@ public class DrawFrustum : MonoBehaviour {
 
 	static public bool DrawClamping = false;
 	static public bool DrawHierarchy = false;
+	static public bool DrawPartitions = false;
 
 	public Vector3 pos;
 
@@ -24,6 +26,7 @@ public class DrawFrustum : MonoBehaviour {
 		pos = new Vector3();
 		_SClampedLines = new List<Vector3>();
 		_SHierarchyLines = new List<Vector3>();
+		_SPartitionLines = new List<Vector3>();
 		Vertices = bot.GetComponent<ControlBot>().Vertices;
 		Debug.Log("Vertices.Count : " + Vertices.Count);
 	}
@@ -83,7 +86,7 @@ public class DrawFrustum : MonoBehaviour {
 			DrawClamps();
 
 		if (DrawHierarchy)
-			DrawHierarchyLines();
+			DrawPartitionLines();
 
 		GL.End();
 		GL.PopMatrix();
@@ -110,13 +113,24 @@ public class DrawFrustum : MonoBehaviour {
 	void DrawHierarchyLines()
 	{
 		GL.Color(Color.blue);
-			//Debug.Log(" No Line ");
+		//Debug.Log(" No Line ");
 		foreach (Vector3 line in _SHierarchyLines)
 		{
 			GL.Vertex(line);
-		//	Debug.Log(" Line " + line);
+			//	Debug.Log(" Line " + line);
 		}
 		_SHierarchyLines.Clear();
+	}
+
+	void DrawPartitionLines()
+	{
+		GL.Color(Color.blue);
+		//Debug.Log(" No Line ");
+		foreach (Vector3 line in _SPartitionLines)
+		{
+			GL.Vertex(line);
+		}
+		_SPartitionLines.Clear();
 	}
 
 	public void DrawLinePQ(Vector3 p, Vector3 q)
@@ -124,5 +138,14 @@ public class DrawFrustum : MonoBehaviour {
 		GL.Vertex(p);
 		GL.Vertex(q);
 	}
+
+
+
+	void DrawLine(Vector3 center, Vector3 width)
+	{
+		GL.Vertex(center + width);
+		GL.Vertex(center - width);
+	}
+
 
 }

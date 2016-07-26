@@ -1,6 +1,8 @@
 ﻿using UnityEngine;
 using System.Collections;
 using System.Collections.Generic;
+using System.IO;
+using System.Runtime.Serialization.Formatters.Binary;
 
 public class QuadTree {
 
@@ -282,7 +284,7 @@ public class QuadTree {
 		else
 		{
 			int Quadrant = InQuadrant(ParticleObject);
-			Debug.Log("FindParticleParent(obj) is in Quadrant:" + Quadrant);
+			//Debug.Log("FindParticleParent(obj) is in Quadrant:" + Quadrant);
 			return (TotalLeafNodes == 1) ? this :
 					((_ChildNodes.ContainsKey(Quadrant)) ?
 						_ChildNodes[Quadrant].FindParticleParent(ParticleObject) : null);
@@ -362,7 +364,7 @@ public class QuadTree {
 			// decrement all the TotalLeafNodes up in tree
 			while (TempParent1._ParentNode != null)
 			{
-				Debug.Log("--TempParent1.TotalLeafNodes:" + --TempParent1.TotalLeafNodes);
+				//Debug.Log("--TempParent1.TotalLeafNodes:" + --TempParent1.TotalLeafNodes);
 				TempParent1 = TempParent1._ParentNode;
 			}
 			//decrement the TotalLeafNodes of parent
@@ -413,8 +415,8 @@ public class QuadTree {
 						//now tempParent has more than one leaf nodes
 						//one in the same quadrant as tempParticle and other in remaining quadrant
 						FoundInQuadrant = TempParent1.InQuadrant(TempParticle);
-						Debug.Log("FoundInQuadrant:" + FoundInQuadrant);
-						Debug.Log("TotalLeafNodes:" + TempParent1.TotalLeafNodes);
+						//Debug.Log("FoundInQuadrant:" + FoundInQuadrant);
+						//Debug.Log("TotalLeafNodes:" + TempParent1.TotalLeafNodes);
 						TempParent1._ChildNodes[FoundInQuadrant].Clear();
 						TempParent1._ChildNodes.Remove(FoundInQuadrant);
 
@@ -432,7 +434,7 @@ public class QuadTree {
 									TempParent1._ChildNode = TempParent1._ChildNodes[leaf]._ChildNode;
 									if (TempParent1._ChildNode != null)
 									{
-										Debug.Log("1234 THIS WAS A MAJOR BUG1!");
+										//Debug.Log("1234 THIS WAS A MAJOR BUG1!");
 										TempParent1._ChildNodes.Clear();
 										break;
 									}
@@ -919,7 +921,7 @@ public class QuadTree {
 			if (_ChildNodes.ContainsKey(i))
 			{
 				if (_ChildNodes[i]._ChildNode != null)
-				{ 
+				{
 					DrawFrustum._SHierarchyLines.Add(Center);
 					DrawFrustum._SHierarchyLines.Add(_ChildNodes[i]._ChildNode.transform.position);
 					continue;
@@ -929,7 +931,47 @@ public class QuadTree {
 				_ChildNodes[i].DrawHierarchy();
 			}
 		}
+	}
 
 
+	public void DrawPartitions()
+	{
+		for (int i = 0; i < 4; ++i)
+		{
+			if (_ChildNodes.ContainsKey(i))
+			{
+				//if (_ChildNodes[i]._ChildNode != null)
+				{
+					Vector3 tempV3W = new Vector3(Width/2, 0, 0);
+					Vector3 tempV3H = new Vector3(0, Height/2, 0);
+					DrawFrustum._SPartitionLines.Add(Center + tempV3H);
+					DrawFrustum._SPartitionLines.Add(Center - tempV3H);
+					DrawFrustum._SPartitionLines.Add(Center + tempV3W);
+					DrawFrustum._SPartitionLines.Add(Center - tempV3W);
+					//continue;
+				}
+				//DrawFrustum._SPartitionLines.Add(Center);
+				//DrawFrustum._SPartitionLines.Add(_ChildNodes[i].Center);
+				_ChildNodes[i].DrawPartitions();
+			}
+		}
+	}
+
+
+	public long Size()
+	{
+		if (_ChildNode == null)
+			return 0;
+		long size = 0;
+		//object o = new object();
+		using (Stream s = new MemoryStream())
+		{
+			BinaryFormatter formatter = new BinaryFormatter();
+			//formatter.Serialize(s, _ChildNodes);
+			//size += s.Length;
+			formatter.Serialize(s, _ChildNode);
+			size += s.Length;
+		}
+		return size;
 	}
 }
